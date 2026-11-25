@@ -147,7 +147,7 @@ class RepositoriesTest {
         assertEquals(UserSettings(), fresh)
         assertTrue(!fresh.isOnboarded)
 
-        settings.update { it.copy(name = "Wanjiru Kamau", currency = UGX, theme = ThemeChoice.Dark, trackDebts = false, startedOn = LocalDate(2026, 11, 25)) }
+        settings.update { it.copy(name = "Wanjiru Kamau", currency = UGX, theme = ThemeChoice.Dark, trackDebts = false, reminderOn = true, reminderMinutes = 21 * 60, startedOn = LocalDate(2026, 11, 25)) }
         val saved = settings.observe().first()
         assertEquals("Wanjiru Kamau", saved.name)
         assertEquals(UGX, saved.currency)
@@ -155,5 +155,7 @@ class RepositoriesTest {
         assertEquals(false, saved.trackDebts)
         assertTrue(saved.trackBudgets)
         assertTrue(saved.isOnboarded)
+        assertTrue(saved.reminderOn)
+        assertEquals(21 * 60, saved.reminderMinutes)
     }
 }

@@ -3,6 +3,8 @@ package app.ledgerly.android.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ledgerly.android.reminders.rememberNotificationPermission
+import app.ledgerly.android.ui.components.Chip
 import app.ledgerly.android.ui.components.Field
 import app.ledgerly.android.ui.components.GroupTitle
 import app.ledgerly.android.ui.components.LedgerlyCard
@@ -43,6 +47,11 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var notificationsBlocked by rememberSaveable { mutableStateOf(false) }
+    val askForNotifications = rememberNotificationPermission { granted ->
+        notificationsBlocked = !granted
+        if (granted) viewModel.onReminderChange(true)
+    }
     SettingsScreen(
         state = state,
         versionName = versionName,
@@ -50,6 +59,9 @@ fun SettingsRoute(
         onThemeChange = viewModel::onThemeChange,
         onTrackBudgetsChange = viewModel::onTrackBudgetsChange,
         onTrackDebtsChange = viewModel::onTrackDebtsChange,
+        notificationsBlocked = notificationsBlocked,
+        onReminderChange = { on -> if (on) askForNotifications() else viewModel.onReminderChange(false) },
+        onReminderTimeChange = viewModel::onReminderTimeChange,
         onEditBudgets = onEditBudgets,
         onClose = onClose,
     )
@@ -66,6 +78,7 @@ private data class SettingItem(
     val onClick: (() -> Unit)? = null,
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
@@ -74,6 +87,9 @@ fun SettingsScreen(
     onThemeChange: (ThemeChoice) -> Unit,
     onTrackBudgetsChange: (Boolean) -> Unit,
     onTrackDebtsChange: (Boolean) -> Unit,
+    notificationsBlocked: Boolean,
+    onReminderChange: (Boolean) -> Unit,
+    onReminderTimeChange: (Int) -> Unit,
     onEditBudgets: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -128,7 +144,34 @@ fun SettingsScreen(
 
         item("habit-head") { GroupTitle("Daily habit") }
         item("habit") {
-            SettingRows(listOf(SettingItem("freezes", "Streak freezes", sub = "Each one covers a day you miss", value = state.freezesText)))
+            SettingRows(
+                listOf(
+                    SettingItem("reminder", "Daily reminder", sub = state.reminderText, checked = state.reminderOn, onCheckedChange = onReminderChange),
+                    SettingItem("freezes", "Streak freezes", sub = "Each one covers a day you miss", value = state.freezesText),
+                ),
+            )
+        }
+        if (state.reminderOn) {
+            item("reminder-time") {
+                FlowRow(
+                    Modifier.padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    state.reminderOptions.forEach { option ->
+                        Chip(option.label, selected = option.minutes == state.reminderMinutes, onClick = { onReminderTimeChange(option.minutes) })
+                    }
+                }
+            }
+        } else if (notificationsBlocked) {
+            item("reminder-blocked") {
+                Text(
+                    "Notifications are off for Ledgerly. Turn them on in your phone's settings to get the reminder.",
+                    style = LedgerlyTextStyles.caption,
+                    color = colors.inkMuted,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp),
+                )
+            }
         }
 
         item("track-head") { GroupTitle("What you track") }

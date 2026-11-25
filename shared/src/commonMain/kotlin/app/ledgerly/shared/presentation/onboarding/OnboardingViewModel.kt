@@ -1,5 +1,9 @@
 package app.ledgerly.shared.presentation.onboarding
 
+import app.ledgerly.shared.domain.rules.reminderTimeLabel
+import app.ledgerly.shared.domain.rules.REMINDER_MESSAGE
+import app.ledgerly.shared.domain.rules.REMINDER_OPTIONS
+import app.ledgerly.shared.domain.rules.ReminderOption
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.repository.SettingsRepository
@@ -13,8 +17,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Welcome → about you → what to track → first budgets (if tracked) → done. */
-enum class OnboardingStep { Welcome, AboutYou, Track, Budgets, Done }
+/** Welcome → about you → what to track → first budgets (if tracked) → reminder → done. */
+enum class OnboardingStep { Welcome, AboutYou, Track, Budgets, Reminder, Done }
 
 data class CurrencyOption(val code: CurrencyCode, val label: String)
 
@@ -28,6 +32,11 @@ data class OnboardingUiState(
     val currencies: List<CurrencyOption>,
     val trackBudgets: Boolean,
     val trackDebts: Boolean,
+    val reminderMinutes: Int,
+    val reminderOptions: List<ReminderOption>,
+    /** "Remind me at 20:00". */
+    val reminderButton: String,
+    val reminderMessage: String,
     val canContinue: Boolean,
     /** For the Done step: "Your budgets are set." or "You can set budgets any time in Settings." */
     val doneText: String,
@@ -46,6 +55,8 @@ class OnboardingViewModel(
         val trackBudgets: Boolean = true,
         val trackDebts: Boolean = true,
         val budgetsSaved: Boolean = false,
+        val reminderOn: Boolean = false,
+        val reminderMinutes: Int = 20 * 60,
         val isFinished: Boolean = false,
     )
 
@@ -83,7 +94,19 @@ class OnboardingViewModel(
 
     /** The budgets step calls this after its own save. */
     fun onBudgetsSaved() {
-        input.update { it.copy(budgetsSaved = true, step = OnboardingStep.Done) }
+        input.update { it.copy(budgetsSaved = true, step = OnboardingStep.Reminder) }
+    }
+
+    fun onReminderTimeChange(minutes: Int) {
+        if (minutes in 0 until 24 * 60) input.update { it.copy(reminderMinutes = minutes) }
+    }
+
+    /**
+     * The reminder step's answer. Each app asks for notification permission before calling this
+     * with true, and passes false if the user declines there.
+     */
+    fun onReminderAnswer(on: Boolean) {
+        input.update { it.copy(reminderOn = on, step = OnboardingStep.Done) }
     }
 
     fun onBack() = input.update { it.copy(step = previous(it)) }
@@ -97,6 +120,8 @@ class OnboardingViewModel(
                     currency = current.currency,
                     trackBudgets = current.trackBudgets,
                     trackDebts = current.trackDebts,
+                    reminderOn = current.reminderOn,
+                    reminderMinutes = current.reminderMinutes,
                     startedOn = clock.today(),
                 )
             }
@@ -107,15 +132,17 @@ class OnboardingViewModel(
     private fun next(current: Input): OnboardingStep = when (current.step) {
         OnboardingStep.Welcome -> OnboardingStep.AboutYou
         OnboardingStep.AboutYou -> OnboardingStep.Track
-        OnboardingStep.Track -> if (current.trackBudgets) OnboardingStep.Budgets else OnboardingStep.Done
-        OnboardingStep.Budgets, OnboardingStep.Done -> OnboardingStep.Done
+        OnboardingStep.Track -> if (current.trackBudgets) OnboardingStep.Budgets else OnboardingStep.Reminder
+        OnboardingStep.Budgets -> OnboardingStep.Reminder
+        OnboardingStep.Reminder, OnboardingStep.Done -> OnboardingStep.Done
     }
 
     private fun previous(current: Input): OnboardingStep = when (current.step) {
         OnboardingStep.Welcome, OnboardingStep.AboutYou -> OnboardingStep.Welcome
         OnboardingStep.Track -> OnboardingStep.AboutYou
         OnboardingStep.Budgets -> OnboardingStep.Track
-        OnboardingStep.Done -> if (current.trackBudgets) OnboardingStep.Budgets else OnboardingStep.Track
+        OnboardingStep.Reminder -> if (current.trackBudgets) OnboardingStep.Budgets else OnboardingStep.Track
+        OnboardingStep.Done -> OnboardingStep.Reminder
     }
 
     private fun state(current: Input): OnboardingUiState {
@@ -123,6 +150,7 @@ class OnboardingViewModel(
             OnboardingStep.AboutYou,
             OnboardingStep.Track,
             OnboardingStep.Budgets.takeIf { current.trackBudgets },
+            OnboardingStep.Reminder,
         )
         return OnboardingUiState(
             step = current.step,
@@ -133,6 +161,10 @@ class OnboardingViewModel(
             currencies = CURRENCIES,
             trackBudgets = current.trackBudgets,
             trackDebts = current.trackDebts,
+            reminderMinutes = current.reminderMinutes,
+            reminderOptions = REMINDER_OPTIONS,
+            reminderButton = "Remind me at ${reminderTimeLabel(current.reminderMinutes)}",
+            reminderMessage = REMINDER_MESSAGE,
             canContinue = current.step != OnboardingStep.AboutYou || current.name.isNotBlank(),
             doneText = when {
                 current.budgetsSaved -> "Your budgets are set. Home shows what's left each day."

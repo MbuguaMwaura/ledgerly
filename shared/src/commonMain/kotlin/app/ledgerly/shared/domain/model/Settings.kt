@@ -17,6 +17,10 @@ data class UserSettings(
     val trackBudgets: Boolean = true,
     /** Off hides the Debts tab and debt cards. Nothing is deleted. */
     val trackDebts: Boolean = true,
+    /** One nudge a day, only on days nothing is logged yet. */
+    val reminderOn: Boolean = false,
+    /** When the nudge comes, in minutes after midnight. 20:00 by default. */
+    val reminderMinutes: Int = 20 * 60,
     /** The day onboarding finished, or null while it hasn't. */
     val startedOn: LocalDate? = null,
 ) {

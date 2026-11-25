@@ -8,6 +8,7 @@ struct SettingsView: View {
 
     @State private var model = SettingsModel()
     @State private var name: String?
+    @State private var notificationsBlocked = false
 
     var body: some View {
         let state = model.state
@@ -64,12 +65,29 @@ struct SettingsView: View {
                         }
                     }
 
-                    Section("Daily habit") {
+                    Section {
+                        Toggle(isOn: Binding(get: { state.reminderOn }, set: { on in setReminder(on) })) {
+                            Text("Daily reminder")
+                            Text(state.reminderText)
+                        }
+                        if state.reminderOn {
+                            Picker("Remind me at", selection: Binding(get: { state.reminderMinutes }, set: { viewModel.onReminderTimeChange(minutes: $0) })) {
+                                ForEach(state.reminderOptions, id: \.minutes) { option in
+                                    Text(option.label).tag(option.minutes)
+                                }
+                            }
+                        }
                         LabeledContent {
                             Text(state.freezesText)
                         } label: {
                             Text("Streak freezes")
                             Text("Each one covers a day you miss")
+                        }
+                    } header: {
+                        Text("Daily habit")
+                    } footer: {
+                        if notificationsBlocked && !state.reminderOn {
+                            Text("Notifications are off for Ledgerly. Turn them on in the Settings app to get the reminder.")
                         }
                     }
 
@@ -110,6 +128,18 @@ struct SettingsView: View {
             }
         }
         .task { await model.observe() }
+    }
+
+    private func setReminder(_ on: Bool) {
+        guard on else {
+            model.viewModel.onReminderChange(on: false)
+            return
+        }
+        Task {
+            let granted = await ReminderScheduler.requestPermission()
+            notificationsBlocked = !granted
+            if granted { model.viewModel.onReminderChange(on: true) }
+        }
     }
 
     private func themeTitle(_ theme: ThemeChoice) -> String {

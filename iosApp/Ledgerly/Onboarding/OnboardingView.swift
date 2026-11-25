@@ -1,7 +1,7 @@
 import Shared
 import SwiftUI
 
-/// First run: welcome, name and currency, what to track, first budgets, done.
+/// First run: welcome, name and currency, what to track, first budgets, a daily reminder, done.
 struct OnboardingView: View {
     @State private var model = OnboardingModel()
     @State private var budgets = EditBudgetsModel()
@@ -97,6 +97,47 @@ struct OnboardingView: View {
                         }
                     }
                     .scrollDismissesKeyboard(.interactively)
+                }
+            case .reminder:
+                step(footer: {
+                    Button(state.reminderButton) {
+                        Task {
+                            let granted = await ReminderScheduler.requestPermission()
+                            viewModel.onReminderAnswer(on: granted)
+                        }
+                    }
+                    .buttonStyle(PillButtonStyle(kind: .primary, fill: true))
+                    Button("Not now") { viewModel.onReminderAnswer(on: false) }.buttonStyle(PillButtonStyle(kind: .quiet, fill: true))
+                }) {
+                    title("A nudge to keep your streak", "Once a day, only if you haven't logged anything yet. Turn it off any time in Settings.")
+                    HStack(spacing: 12) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(LedgerlyColor.cobalt)
+                            .frame(width: 44, height: 44)
+                            .background(LedgerlyColor.cobaltSoft, in: Circle())
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Ledgerly").ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
+                            Text(state.reminderMessage).ledgerlyText(LedgerlyText.body).foregroundStyle(LedgerlyColor.ink)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(16)
+                    .background(LedgerlyColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(LedgerlyColor.line, lineWidth: 1))
+                    .accessibilityElement(children: .combine)
+                    .padding(.top, 8)
+                    FormField(label: "Remind me at") {
+                        FlowLayout {
+                            ForEach(state.reminderOptions, id: \.minutes) { option in
+                                ChipButton(title: option.label, selected: option.minutes == state.reminderMinutes) {
+                                    viewModel.onReminderTimeChange(minutes: option.minutes)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.top, 24)
+                    Spacer()
                 }
             case .done:
                 step(footer: {

@@ -31,6 +31,15 @@ struct AppShell: View {
         }
         .preferredColorScheme(colorScheme(state.theme))
         .task { await app.observe() }
+        .task(id: reminderKey(state)) {
+            guard let times = reminderKey(state) else { return }
+            await ReminderScheduler.schedule(times: times, message: state.reminderMessage)
+        }
+    }
+
+    /// The reminder times to schedule, or nil while settings are still loading.
+    private func reminderKey(_ state: AppUiState) -> [Int64]? {
+        state.isLoading ? nil : state.reminderTimes.map { $0.int64Value }
     }
 
     private func colorScheme(_ theme: ThemeChoice) -> ColorScheme? {
