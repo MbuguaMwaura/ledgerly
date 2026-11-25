@@ -37,6 +37,8 @@ xcodegen --spec iosApp/project.yml
 open iosApp/Ledgerly.xcodeproj               # the build phase compiles the Kotlin framework
 ```
 
+Run `xcodegen` again whenever `iosApp/project.yml` changes after a pull. The Xcode project is not committed, so an old one misses newer build settings: for example, without `-lsqlite3` the link fails with `Undefined symbol: _sqlite3_column_bytes`. The build stops with a reminder when the project is older than `project.yml`.
+
 ## Design tokens
 
 Edit `designTokens/tokens.json`, then:
