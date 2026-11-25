@@ -32,6 +32,15 @@ targets:
         FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
         OTHER_LDFLAGS: ["$(inherited)", "-framework", "Shared", "-lsqlite3"]
     preBuildScripts:
+      - name: Check the Xcode project is current
+        basedOnDependencyAnalysis: false
+        script: |
+          # The project is generated from project.yml. If project.yml changed since, build settings
+          # such as -lsqlite3 can be missing and the link fails with undefined symbols.
+          if [ "$SRCROOT/project.yml" -nt "$PROJECT_FILE_PATH/project.pbxproj" ]; then
+            echo "error: iosApp/project.yml changed after Ledgerly.xcodeproj was generated. Run: xcodegen --spec iosApp/project.yml"
+            exit 1
+          fi
       - name: Compile Kotlin framework
         basedOnDependencyAnalysis: false
         script: |
