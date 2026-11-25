@@ -29,10 +29,10 @@ fun Amount(
     val faint = if (style.fontSize.value >= 24f) colors.inkFaint else colors.ink
     val text = buildAnnotatedString {
         if (parts.sign == Sign.Negative) withStyle(SpanStyle(color = colors.ink)) { append("− ") }
-        withStyle(SpanStyle(color = faint)) { append(parts.currencyCode).append(' ') }
+        withStyle(SpanStyle(color = faint)) { append("${parts.currencyCode} ") }
         withStyle(SpanStyle(color = colors.ink)) { append(parts.whole) }
         if (showFraction && parts.fraction.isNotEmpty()) {
-            withStyle(SpanStyle(color = faint)) { append('.').append(parts.fraction) }
+            withStyle(SpanStyle(color = faint)) { append(".${parts.fraction}") }
         }
     }
     Text(

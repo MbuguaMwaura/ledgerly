@@ -52,7 +52,9 @@ val generateKotlinTokens = tasks.register<GenerateKotlinTokensTask>("generateKot
 
 androidComponents {
     onVariants { variant ->
-        variant.sources.kotlin?.addGeneratedSourceDirectory(generateKotlinTokens, GenerateKotlinTokensTask::outputDir)
+        // Registered as Java sources: the Kotlin Android plugin compiles Kotlin files from these dirs,
+        // while generated `kotlin` dirs from the variant API are not passed to compileKotlin on AGP 8.
+        variant.sources.java?.addGeneratedSourceDirectory(generateKotlinTokens, GenerateKotlinTokensTask::outputDir)
     }
 }
 
