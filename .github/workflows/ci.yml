@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shared-and-android:
+    name: Shared tests and Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Token generator tests
+        run: ./gradlew -p build-logic test
+
+      - name: Shared tests (JVM)
+        run: ./gradlew :shared:testDebugUnitTest
+
+      - name: Android debug build
+        run: ./gradlew :androidApp:assembleDebug
+
+      - name: Swift tokens are up to date
+        run: |
+          ./gradlew :designTokens:generateSwiftTokens
+          git diff --exit-code -- iosApp/Ledgerly/DesignSystem/Generated \
+            || (echo "::error::Run ./gradlew :designTokens:generateSwiftTokens and commit the result." && exit 1)
+
+  ios:
+    name: Shared tests (iOS) and iOS build
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Cache Kotlin/Native
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Shared tests (iOS simulator)
+        run: ./gradlew :shared:iosSimulatorArm64Test
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen --spec iosApp/project.yml
+
+      - name: Build the iOS app for the simulator
+        run: |
+          xcodebuild build \
+            -project iosApp/Ledgerly.xcodeproj \
+            -scheme Ledgerly \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO
