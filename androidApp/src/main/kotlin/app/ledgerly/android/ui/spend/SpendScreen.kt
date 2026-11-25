@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,8 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ledgerly.android.ui.components.Amount
 import app.ledgerly.android.ui.components.BudgetRow
+import app.ledgerly.android.ui.components.ButtonStyle
 import app.ledgerly.android.ui.components.EmptyNote
 import app.ledgerly.android.ui.components.EntryRow
+import app.ledgerly.android.ui.components.LedgerlyButton
 import app.ledgerly.android.ui.components.LedgerlyCard
 import app.ledgerly.android.ui.components.LinkButton
 import app.ledgerly.android.ui.components.RowsCard
@@ -37,7 +37,6 @@ import app.ledgerly.android.ui.components.short
 import app.ledgerly.android.ui.theme.LedgerlyTheme
 import app.ledgerly.android.ui.theme.tokens.LedgerlyTextStyles
 import app.ledgerly.shared.money.Money
-import app.ledgerly.shared.presentation.common.EntryRowState
 import app.ledgerly.shared.presentation.spend.SpendUiState
 import app.ledgerly.shared.presentation.spend.SpendViewModel
 import kotlinx.datetime.LocalDate
@@ -49,21 +48,26 @@ import java.util.Locale
 private enum class SpendView(val label: String) { Log("Daily log"), Budgets("Budgets") }
 
 @Composable
-fun SpendRoute(modifier: Modifier = Modifier, viewModel: SpendViewModel = koinViewModel()) {
+fun SpendRoute(
+    onOpenEntry: (String) -> Unit,
+    onEditBudgets: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SpendViewModel = koinViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    SpendScreen(state, viewModel::onSelectDay, viewModel::onDeleteEntry, modifier)
+    SpendScreen(state, viewModel::onSelectDay, onOpenEntry, onEditBudgets, modifier)
 }
 
 @Composable
 fun SpendScreen(
     state: SpendUiState,
     onSelectDay: (LocalDate?) -> Unit,
-    onDeleteEntry: (String) -> Unit,
+    onOpenEntry: (String) -> Unit,
+    onEditBudgets: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LedgerlyTheme.colors
     var view by rememberSaveable { mutableStateOf(SpendView.Log) }
-    var deleting by rememberSaveable { mutableStateOf<String?>(null) }
     val monthName = Month.of(state.month.month).getDisplayName(TextStyle.FULL, Locale.UK)
     val today = state.bars.firstOrNull { it.isToday }?.date
     val daysLeft = today?.let { state.month.lengthInDays - it.dayOfMonth + 1 }
@@ -132,7 +136,7 @@ fun SpendScreen(
                         Text(day.label, style = LedgerlyTextStyles.label, color = colors.ink)
                         Text(day.spent.label(), style = LedgerlyTextStyles.label, color = colors.inkMuted)
                     }
-                    RowsCard(day.entries) { entry -> EntryRow(entry, onClick = { deleting = entry.id }) }
+                    RowsCard(day.entries) { entry -> EntryRow(entry, onClick = { onOpenEntry(entry.id) }) }
                     }
                 }
             }
@@ -144,33 +148,38 @@ fun SpendScreen(
                     )
                 }
             }
+            if (state.budgets.isEmpty() && !state.isLoading) {
+                item("set-budgets") {
+                    LedgerlyCard(Modifier.padding(top = 24.dp)) {
+                        Text("No budgets yet", style = LedgerlyTextStyles.heading, color = colors.ink)
+                        Text(
+                            "Set a monthly limit for the categories you want to watch. Home then shows what's left each day.",
+                            style = LedgerlyTextStyles.label,
+                            color = colors.inkMuted,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                        )
+                        LedgerlyButton("Set budgets", onEditBudgets, style = ButtonStyle.Soft, small = true)
+                    }
+                }
+            }
         } else {
             item("budgets-head") {
-                Text(
-                    "${state.budgets.size} budgets this month",
-                    style = LedgerlyTextStyles.label,
-                    color = colors.ink,
-                    modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 8.dp),
-                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, top = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${state.budgets.size} ${if (state.budgets.size == 1) "budget" else "budgets"} this month",
+                        style = LedgerlyTextStyles.label,
+                        color = colors.ink,
+                    )
+                    LinkButton("Edit budgets", onEditBudgets)
+                }
             }
             item("budgets") { RowsCard(state.budgets) { BudgetRow(it, daysLeft) } }
         }
-    }
-
-    val entry: EntryRowState? = deleting?.let { id -> state.days.flatMap { it.entries }.firstOrNull { it.id == id } }
-    if (entry != null) {
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            title = { Text("Delete this entry?") },
-            text = { Text("${entry.title}, ${entry.signedAmount.label(withSign = true)} at ${entry.time}. This can't be undone.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDeleteEntry(entry.id)
-                    deleting = null
-                }) { Text("Delete", color = colors.loss) }
-            },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Keep it") } },
-            containerColor = colors.surface,
-        )
     }
 }

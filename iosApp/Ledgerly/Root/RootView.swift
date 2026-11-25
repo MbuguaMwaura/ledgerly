@@ -21,12 +21,29 @@ enum AppTab: Hashable, CaseIterable {
     }
 }
 
+/// A page that opens over the tabs as a sheet.
+enum AppSheet: Identifiable {
+    case addDebt(DebtDirection)
+    case budgets
+    case entry(String)
+
+    var id: String {
+        switch self {
+        case .addDebt: "add-debt"
+        case .budgets: "budgets"
+        case .entry(let id): "entry-\(id)"
+        }
+    }
+}
+
 /// The app shell: three tabs under a floating Liquid Glass tab bar with the + beside it, the
 /// Expense / Income menu, the Quick log sheet and the confirmation toast.
 struct RootView: View {
     @State private var tab: AppTab = .home
     @State private var home = HomeModel()
     @State private var quickLog = QuickLogModel()
+    @State private var debts = DebtsModel()
+    @State private var page: AppSheet?
     @State private var menuOpen = false
     @State private var logging = false
     @State private var toast: String?
@@ -40,12 +57,14 @@ struct RootView: View {
                         model: home,
                         onLog: { openLog(.expense) },
                         onOpenSpend: { tab = .spend },
-                        onOpenDebts: { tab = .debts }
+                        onOpenDebts: { tab = .debts },
+                        onOpenEntry: { page = .entry($0) },
+                        onEditBudgets: { page = .budgets }
                     )
                 case .spend:
-                    SpendView()
+                    SpendView(onOpenEntry: { page = .entry($0) }, onEditBudgets: { page = .budgets })
                 case .debts:
-                    DebtsView()
+                    DebtsView(model: debts, onAddDebt: { page = .addDebt($0) })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -111,6 +130,29 @@ struct RootView: View {
                 onClose: { logging = false }
             )
         }
+        .sheet(item: $page) { page in
+            switch page {
+            case .addDebt(let direction):
+                AddDebtView(
+                    direction: direction,
+                    onSaved: { message, saved in
+                        debts.viewModel.onSelectDirection(value: saved)
+                        tab = .debts
+                        close(message)
+                    },
+                    onClose: { close() }
+                )
+            case .budgets:
+                EditBudgetsView(onSaved: { close("Budgets saved.") }, onClose: { close() })
+            case .entry(let id):
+                TransactionDetailView(entryId: id, onDone: { close($0) }, onClose: { close() })
+            }
+        }
+    }
+
+    private func close(_ message: String? = nil) {
+        page = nil
+        if let message { toast = message }
     }
 
     private func openLog(_ kind: EntryKind) {

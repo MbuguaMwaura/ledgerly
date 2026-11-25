@@ -114,4 +114,26 @@ class RepositoriesTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun budgetsCarryOverUntilChanged() = test {
+        val october = BudgetMonth(2026, 10)
+        val november = BudgetMonth(2026, 11)
+        val december = BudgetMonth(2026, 12)
+        budgets.save(Budget("food", october, kes(8_000)), clock.now())
+        budgets.save(Budget("rent", october, kes(20_000)), clock.now())
+        budgets.save(Budget("food", november, kes(10_000)), clock.now())
+        budgets.save(Budget("rent", december, kes(0)), clock.now())
+
+        assertEquals(
+            setOf(Budget("food", november, kes(10_000)), Budget("rent", november, kes(20_000))),
+            budgets.observeMonth(november).first().toSet(),
+        )
+        assertEquals(listOf(Budget("food", december, kes(10_000))), budgets.observeMonth(december).first())
+        assertEquals(
+            setOf(Budget("food", october, kes(8_000)), Budget("rent", october, kes(20_000))),
+            budgets.observeMonth(october).first().toSet(),
+        )
+        assertTrue(budgets.observeMonth(BudgetMonth(2026, 9)).first().isEmpty())
+    }
 }

@@ -142,6 +142,7 @@ struct DebtorRowView: View {
     let draft: (ReminderTone) -> String?
     let onRecordPayment: () -> Void
     let onSend: (String) -> Void
+    var showActions = true
 
     @State private var open = false
     @State private var tone: ReminderTone = .friendly
@@ -169,7 +170,9 @@ struct DebtorRowView: View {
             .padding(.top, LedgerlySpacing.space5)
             .padding(.bottom, 12)
 
-            if row.isSettled {
+            if !showActions {
+                Spacer().frame(height: 8)
+            } else if row.isSettled {
                 Text("Paid in full").ledgerlyText(LedgerlyText.caption).foregroundStyle(LedgerlyColor.gain)
                     .padding(.bottom, LedgerlySpacing.space5)
             } else if open {
@@ -226,6 +229,7 @@ struct DebtorRowView: View {
 struct LoanRowView: View {
     let row: DebtRowState
     let onRecordPayment: () -> Void
+    var showActions = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -241,15 +245,19 @@ struct LoanRowView: View {
             .padding(.top, LedgerlySpacing.space5)
             .padding(.bottom, 12)
 
-            HStack {
-                if row.isSettled {
-                    Text("Paid off").ledgerlyText(LedgerlyText.caption).foregroundStyle(LedgerlyColor.gain)
-                } else {
-                    Spacer()
-                    Button("Record payment", action: onRecordPayment).buttonStyle(PillButtonStyle(kind: .soft, small: true))
+            if !showActions {
+                Spacer().frame(height: 8)
+            } else {
+                HStack {
+                    if row.isSettled {
+                        Text("Paid off").ledgerlyText(LedgerlyText.caption).foregroundStyle(LedgerlyColor.gain)
+                    } else {
+                        Spacer()
+                        Button("Record payment", action: onRecordPayment).buttonStyle(PillButtonStyle(kind: .soft, small: true))
+                    }
                 }
+                .padding(.bottom, LedgerlySpacing.space5)
             }
-            .padding(.bottom, LedgerlySpacing.space5)
         }
         .padding(.horizontal, LedgerlySpacing.space5)
         .background(row.isOverdue ? LedgerlyColor.lossSoft : LedgerlyColor.surface, in: RoundedRectangle(cornerRadius: LedgerlyRadius.radiusMd, style: .continuous))

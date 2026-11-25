@@ -19,10 +19,13 @@ import app.ledgerly.shared.domain.usecase.LogNothingSpent
 import app.ledgerly.shared.domain.usecase.MarkReminded
 import app.ledgerly.shared.domain.usecase.ObserveHomeSummary
 import app.ledgerly.shared.domain.usecase.RecordDebtPayment
+import app.ledgerly.shared.presentation.adddebt.AddDebtViewModel
+import app.ledgerly.shared.presentation.budgets.EditBudgetsViewModel
 import app.ledgerly.shared.presentation.debts.DebtsViewModel
 import app.ledgerly.shared.presentation.home.HomeViewModel
 import app.ledgerly.shared.presentation.quicklog.QuickLogViewModel
 import app.ledgerly.shared.presentation.spend.SpendViewModel
+import app.ledgerly.shared.presentation.transaction.TransactionDetailViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.koin.core.module.Module
@@ -57,6 +60,9 @@ val sharedModule: Module = module {
     viewModelOf(::SpendViewModel)
     viewModelOf(::DebtsViewModel)
     viewModelOf(::QuickLogViewModel)
+    viewModelOf(::AddDebtViewModel)
+    viewModelOf(::EditBudgetsViewModel)
+    viewModelOf(::TransactionDetailViewModel)
 }
 
 /** Supplies the platform's `SqlDriver` for [LedgerlyDatabase]. */

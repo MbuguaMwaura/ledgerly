@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 object LedgerlyIcons {
     val Plus = icon("Plus", "M12 5v14M5 12h14")
     val Close = icon("Close", "M6 6l12 12M18 6L6 18")
+    val Minus = icon("Minus", "M5 12h14")
+    val Trash = icon("Trash", "M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3")
     val Check = icon("Check", "M5 12.5l4.5 4.5L19 7.5")
     val Flame = icon("Flame", "M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.8 1.2 2.8 2.3 3.2C10.8 9 11.5 6 12 3z")
     val Snow = icon("Snow", "M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9")

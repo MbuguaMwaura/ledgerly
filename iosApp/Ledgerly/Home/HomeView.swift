@@ -6,6 +6,8 @@ struct HomeView: View {
     let onLog: () -> Void
     let onOpenSpend: () -> Void
     let onOpenDebts: () -> Void
+    let onOpenEntry: (String) -> Void
+    let onEditBudgets: () -> Void
 
     var body: some View {
         let state = model.state
@@ -25,6 +27,11 @@ struct HomeView: View {
                         .padding(.top, 6)
                     subline(state, hasBudgets: hasBudgets)
                         .padding(.top, 6)
+                    if !hasBudgets && !state.isLoading {
+                        Button("Set budgets", action: onEditBudgets)
+                            .buttonStyle(PillButtonStyle(kind: .soft, small: true))
+                            .padding(.top, 12)
+                    }
                     HStack(spacing: 0) {
                         splitCell("Spent", caption: hasBudgets ? "\(state.budgetPercentUsed)% of budget" : "This month", money: state.spent)
                         Rectangle().fill(LedgerlyColor.line).frame(width: 1).padding(.vertical, 12)
@@ -48,7 +55,7 @@ struct HomeView: View {
                         HStack {
                             Text("Budgets").ledgerlyText(LedgerlyText.heading).foregroundStyle(LedgerlyColor.ink)
                             Spacer()
-                            Button("See all", action: onOpenSpend).buttonStyle(LinkButtonStyle())
+                            Button("Edit", action: onEditBudgets).buttonStyle(LinkButtonStyle())
                         }
                         GaugeView(fraction: Double(state.budgetPercentUsed) / 100) {
                             Text("Budget used").ledgerlyText(LedgerlyText.caption).foregroundStyle(LedgerlyColor.inkMuted)
@@ -72,7 +79,10 @@ struct HomeView: View {
                 if state.recent.isEmpty {
                     Card { EmptyNote(text: state.isLoading ? "" : "Nothing logged this month yet. Tap + to log your first expense.") }
                 } else {
-                    RowsCard(items: state.recent) { EntryRowView(row: $0) }
+                    RowsCard(items: state.recent) { entry in
+                        Button { onOpenEntry(entry.id) } label: { EntryRowView(row: entry) }
+                            .buttonStyle(.plain)
+                    }
                 }
 
                 if !state.debtsDueSoon.isEmpty {

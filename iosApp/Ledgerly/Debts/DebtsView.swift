@@ -8,7 +8,9 @@ private struct Reminder: Identifiable {
 }
 
 struct DebtsView: View {
-    @State private var model = DebtsModel()
+    let model: DebtsModel
+    let onAddDebt: (DebtDirection) -> Void
+
     @State private var paying: DebtRowState?
     @State private var reminding: Reminder?
 
@@ -84,6 +86,11 @@ struct DebtsView: View {
             }
             .background(LedgerlyColor.canvas.ignoresSafeArea())
             .navigationTitle("Debts")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Add debt", systemImage: "plus") { onAddDebt(state.direction) }
+                }
+            }
         }
         .task { await model.observe() }
         .sheet(item: $paying) { row in

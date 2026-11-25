@@ -41,8 +41,13 @@ interface LogRepository {
 }
 
 interface BudgetRepository {
+    /**
+     * The budgets in force in [month]. A budget set in an earlier month carries over until it is
+     * changed, so each returned [Budget] has [month] as its month.
+     */
     fun observeMonth(month: BudgetMonth): Flow<List<Budget>>
 
+    /** Sets the limit from [Budget.month] onwards. A zero limit removes the budget from that month on. */
     suspend fun save(budget: Budget, at: Instant)
 
     suspend fun delete(categoryId: String, month: BudgetMonth)

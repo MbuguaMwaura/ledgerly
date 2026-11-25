@@ -86,7 +86,7 @@ class LocalBudgetRepository(
     private val io: CoroutineDispatcher,
 ) : BudgetRepository {
     override fun observeMonth(month: BudgetMonth): Flow<List<Budget>> =
-        db.budgetQueries.selectForMonth(month.toDb()) { categoryId, _, limitMinor, currency, _ ->
+        db.budgetQueries.selectEffective(month.toDb()) { categoryId, _, limitMinor, currency, _ ->
             Budget(categoryId, month, money(limitMinor, currency))
         }.asFlow().mapToList(io)
 

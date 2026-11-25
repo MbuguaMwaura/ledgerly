@@ -108,6 +108,10 @@ internal fun Debt.toRow(today: LocalDate, timeZone: TimeZone): DebtRowState = De
 private val WEEKDAYS = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 private val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
+/** "Fri 27 Nov". */
+fun shortDate(date: LocalDate): String =
+    "${WEEKDAYS[date.dayOfWeek.ordinal]} ${date.dayOfMonth} ${MONTHS[date.monthNumber - 1]}"
+
 /** "Today", "Yesterday", or "Wed, 25 Nov". */
 internal fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     today -> "Today"

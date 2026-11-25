@@ -32,6 +32,9 @@ import app.ledgerly.android.ui.components.LoanRow
 import app.ledgerly.android.ui.components.SegmentedControl
 import app.ledgerly.android.ui.components.TabScreen
 import app.ledgerly.android.ui.components.TabTitle
+import app.ledgerly.android.ui.components.LedgerlyIcons
+import app.ledgerly.android.ui.components.LedgerlyIcon
+import app.ledgerly.android.ui.components.RoundIconButton
 import app.ledgerly.android.ui.components.label
 import app.ledgerly.android.ui.theme.LedgerlyTheme
 import app.ledgerly.android.ui.theme.tokens.LedgerlyRadius
@@ -46,7 +49,11 @@ import app.ledgerly.shared.presentation.debts.DebtsViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun DebtsRoute(modifier: Modifier = Modifier, viewModel: DebtsViewModel = koinViewModel()) {
+fun DebtsRoute(
+    onAddDebt: (DebtDirection) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: DebtsViewModel = koinViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var remindingId by rememberSaveable { mutableStateOf<String?>(null) }
     // The share sheet comes back whether or not the user sent it; returning from it counts as reminded.
@@ -59,6 +66,7 @@ fun DebtsRoute(modifier: Modifier = Modifier, viewModel: DebtsViewModel = koinVi
     DebtsScreen(
         state = state,
         onSelectDirection = viewModel::onSelectDirection,
+        onAddDebt = { onAddDebt(state.direction) },
         draftFor = viewModel::reminderDraft,
         onRecordPayment = { paying = it },
         onSendReminder = { id, text ->
@@ -91,6 +99,7 @@ private fun DebtsUiState.allRows(): List<DebtRowState> = overdue + dueSoon + lat
 fun DebtsScreen(
     state: DebtsUiState,
     onSelectDirection: (DebtDirection) -> Unit,
+    onAddDebt: () -> Unit,
     draftFor: (String, ReminderTone) -> String?,
     onRecordPayment: (String) -> Unit,
     onSendReminder: (String, String) -> Unit,
@@ -100,7 +109,11 @@ fun DebtsScreen(
     val owedToMe = state.direction == DebtDirection.OwedToMe
 
     TabScreen(modifier) {
-        item("title") { TabTitle("Debts") }
+        item("title") {
+            TabTitle("Debts") {
+                RoundIconButton(onAddDebt, "Add debt") { LedgerlyIcon(LedgerlyIcons.Plus, size = 22.dp) }
+            }
+        }
 
         item("totals") {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerlySpacing.space3)) {
