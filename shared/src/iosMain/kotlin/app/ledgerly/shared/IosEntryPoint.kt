@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
+import app.ledgerly.shared.di.platformModule
 import app.ledgerly.shared.di.sharedModule
 import app.ledgerly.shared.home.HomeViewModel
 import org.koin.core.component.KoinComponent
@@ -18,7 +19,7 @@ object LedgerlyShared {
 
     fun start() {
         if (started) return
-        startKoin { modules(sharedModule) }
+        startKoin { modules(sharedModule, platformModule) }
         started = true
     }
 }

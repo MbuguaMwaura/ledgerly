@@ -1,0 +1,46 @@
+-- direction: 'OwedToMe' or 'IOwe'. due_date is an ISO day or NULL.
+CREATE TABLE debt (
+    id TEXT NOT NULL PRIMARY KEY,
+    direction TEXT NOT NULL,
+    counterparty TEXT NOT NULL,
+    principal_minor INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    due_date TEXT,
+    note TEXT,
+    created_at INTEGER NOT NULL,
+    last_reminded_at INTEGER,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE debt_payment (
+    id TEXT NOT NULL PRIMARY KEY,
+    debt_id TEXT NOT NULL REFERENCES debt(id) ON DELETE CASCADE,
+    amount_minor INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    paid_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX debt_payment_debt ON debt_payment(debt_id);
+
+selectAll:
+SELECT * FROM debt ORDER BY due_date IS NULL, due_date, created_at;
+
+selectAllPayments:
+SELECT * FROM debt_payment ORDER BY paid_at;
+
+upsert:
+INSERT OR REPLACE INTO debt (id, direction, counterparty, principal_minor, currency, due_date, note, created_at, last_reminded_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+markReminded:
+UPDATE debt SET last_reminded_at = :remindedAt, updated_at = :remindedAt WHERE id = :id;
+
+insertPayment:
+INSERT INTO debt_payment (id, debt_id, amount_minor, currency, paid_at, updated_at) VALUES (?, ?, ?, ?, ?, ?);
+
+deletePaymentsFor:
+DELETE FROM debt_payment WHERE debt_id = ?;
+
+deleteById:
+DELETE FROM debt WHERE id = ?;

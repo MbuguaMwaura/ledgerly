@@ -1,0 +1,18 @@
+-- A monthly limit per category. month is 'YYYY-MM'.
+CREATE TABLE budget (
+    category_id TEXT NOT NULL REFERENCES category(id),
+    month TEXT NOT NULL,
+    limit_minor INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    PRIMARY KEY (category_id, month)
+);
+
+selectForMonth:
+SELECT * FROM budget WHERE month = ?;
+
+upsert:
+INSERT OR REPLACE INTO budget (category_id, month, limit_minor, currency, updated_at) VALUES (?, ?, ?, ?, ?);
+
+delete:
+DELETE FROM budget WHERE category_id = ? AND month = ?;

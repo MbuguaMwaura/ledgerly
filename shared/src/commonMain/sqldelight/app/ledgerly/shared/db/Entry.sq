@@ -1,0 +1,42 @@
+-- One logged expense or income. Money is integer minor units plus an ISO currency code.
+-- Times are epoch milliseconds; logical_date is the ISO day after the 03:00 cutoff.
+CREATE TABLE entry (
+    id TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    amount_minor INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    category_id TEXT NOT NULL REFERENCES category(id),
+    note TEXT,
+    occurred_at INTEGER NOT NULL,
+    logical_date TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX entry_logical_date ON entry(logical_date);
+
+-- "Nothing spent today": keeps the streak without a transaction.
+CREATE TABLE nothing_spent_day (
+    logical_date TEXT NOT NULL PRIMARY KEY,
+    updated_at INTEGER NOT NULL
+);
+
+selectBetween:
+SELECT * FROM entry WHERE logical_date BETWEEN :fromDate AND :toDate ORDER BY occurred_at DESC;
+
+selectById:
+SELECT * FROM entry WHERE id = ?;
+
+upsert:
+INSERT OR REPLACE INTO entry (id, kind, amount_minor, currency, category_id, note, occurred_at, logical_date, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM entry WHERE id = ?;
+
+markNothingSpent:
+INSERT OR REPLACE INTO nothing_spent_day (logical_date, updated_at) VALUES (?, ?);
+
+loggedDays:
+SELECT logical_date FROM entry
+UNION
+SELECT logical_date FROM nothing_spent_day;
