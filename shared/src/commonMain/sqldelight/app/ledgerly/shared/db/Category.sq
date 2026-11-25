@@ -1,0 +1,30 @@
+-- kind: 'Expense' or 'Income'
+CREATE TABLE category (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+INSERT INTO category (id, name, icon, kind, sort_order, updated_at) VALUES
+    ('food', 'Food', 'food', 'Expense', 0, 0),
+    ('transport', 'Transport', 'transport', 'Expense', 1, 0),
+    ('rent', 'Rent', 'home', 'Expense', 2, 0),
+    ('bills', 'Bills', 'bolt', 'Expense', 3, 0),
+    ('airtime', 'Airtime and data', 'phone', 'Expense', 4, 0),
+    ('shopping', 'Shopping', 'bag', 'Expense', 5, 0),
+    ('fun', 'Going out', 'ticket', 'Expense', 6, 0),
+    ('health', 'Health', 'heart', 'Expense', 7, 0),
+    ('other-expense', 'Other', 'dots', 'Expense', 8, 0),
+    ('salary', 'Salary', 'briefcase', 'Income', 0, 0),
+    ('business', 'Business', 'store', 'Income', 1, 0),
+    ('gift', 'Gift', 'gift', 'Income', 2, 0),
+    ('other-income', 'Other', 'dots', 'Income', 3, 0);
+
+selectAll:
+SELECT * FROM category ORDER BY kind, sort_order;
+
+upsert:
+INSERT OR REPLACE INTO category (id, name, icon, kind, sort_order, updated_at) VALUES (?, ?, ?, ?, ?, ?);
