@@ -82,7 +82,7 @@ fun AddDebtScreen(
         }
         item("amount") {
             Field("How much", gap) {
-                LedgerlyTextField(state.amountText, onAmountChange, placeholder = "0", amount = true, prefix = "KES")
+                LedgerlyTextField(state.amountText, onAmountChange, placeholder = "0", amount = true, prefix = state.currency.code)
             }
         }
         item("who") {

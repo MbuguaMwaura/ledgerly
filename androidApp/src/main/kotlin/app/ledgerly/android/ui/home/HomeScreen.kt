@@ -1,5 +1,8 @@
 package app.ledgerly.android.ui.home
 
+import app.ledgerly.android.ui.components.LedgerlyIcons
+import app.ledgerly.android.ui.components.LedgerlyIcon
+import app.ledgerly.android.ui.components.RoundIconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +67,10 @@ fun HomeRoute(
     onOpenDebts: () -> Unit,
     onOpenEntry: (String) -> Unit,
     onEditBudgets: () -> Unit,
+    onOpenSettings: () -> Unit,
+    firstName: String,
+    trackBudgets: Boolean,
+    trackDebts: Boolean,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -76,6 +83,10 @@ fun HomeRoute(
         onOpenDebts = onOpenDebts,
         onOpenEntry = onOpenEntry,
         onEditBudgets = onEditBudgets,
+        onOpenSettings = onOpenSettings,
+        firstName = firstName,
+        trackBudgets = trackBudgets,
+        trackDebts = trackDebts,
         modifier = modifier,
     )
 }
@@ -89,17 +100,29 @@ fun HomeScreen(
     onOpenDebts: () -> Unit,
     onOpenEntry: (String) -> Unit,
     onEditBudgets: () -> Unit,
+    onOpenSettings: () -> Unit,
+    firstName: String,
+    trackBudgets: Boolean,
+    trackDebts: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val colors = LedgerlyTheme.colors
     val now = LocalDateTime.now()
-    val hasBudgets = state.totalBudget.minorUnits > 0
+    val hasBudgets = trackBudgets && state.totalBudget.minorUnits > 0
 
     TabScreen(modifier) {
         item("header") {
-            Column(Modifier.padding(top = 12.dp, bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(now.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.UK)), style = LedgerlyTextStyles.label, color = colors.inkMuted)
-                Text(greeting(now.hour), style = LedgerlyTextStyles.title, color = colors.ink, modifier = Modifier.semantics { heading() })
+            Row(Modifier.padding(top = 12.dp, bottom = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(now.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.UK)), style = LedgerlyTextStyles.label, color = colors.inkMuted)
+                    Text(
+                        if (firstName.isEmpty()) greeting(now.hour) else "${greeting(now.hour)}, $firstName",
+                        style = LedgerlyTextStyles.title,
+                        color = colors.ink,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                }
+                RoundIconButton(onOpenSettings, "Settings", size = 44.dp) { LedgerlyIcon(LedgerlyIcons.Sliders, size = 20.dp) }
             }
         }
 
@@ -112,8 +135,10 @@ fun HomeScreen(
                 Amount(if (hasBudgets) state.leftToSpend else state.spent, style = LedgerlyTextStyles.amountHero, modifier = Modifier.padding(top = 6.dp))
                 Text(
                     buildAnnotatedString {
-                        if (!hasBudgets) {
+                        if (!hasBudgets && trackBudgets) {
                             append("Set budgets to see what's left each day.")
+                        } else if (!hasBudgets) {
+                            append("Across everything you logged this month.")
                         } else if (state.leftToSpend.isNegative) {
                             withStyle(SpanStyle(color = colors.loss, fontWeight = FontWeight.SemiBold)) { append("${(-state.leftToSpend).label()} over") }
                             append(" your budgets this month")
@@ -126,7 +151,7 @@ fun HomeScreen(
                     color = colors.inkMuted,
                     modifier = Modifier.padding(top = 6.dp),
                 )
-                if (!hasBudgets && !state.isLoading) {
+                if (trackBudgets && !hasBudgets && !state.isLoading) {
                     LedgerlyButton("Set budgets", onEditBudgets, style = ButtonStyle.Soft, small = true, modifier = Modifier.padding(top = 12.dp))
                 }
                 Row(
@@ -202,7 +227,7 @@ fun HomeScreen(
             }
         }
 
-        if (state.debtsDueSoon.isNotEmpty()) {
+        if (trackDebts && state.debtsDueSoon.isNotEmpty()) {
             item("owed-head") { SectionHeader("Owed to you, due soon", action = "All debts", onAction = onOpenDebts) }
             state.debtsDueSoon.forEach { debt ->
                 item("owed-${debt.id}") { DueSoonRow(debt, onOpenDebts, Modifier.padding(bottom = LedgerlySpacing.space3)) }

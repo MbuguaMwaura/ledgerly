@@ -1,5 +1,7 @@
 package app.ledgerly.shared.presentation.spend
 
+import app.ledgerly.shared.presentation.common.currency
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.BudgetMonth
@@ -57,11 +59,11 @@ class SpendViewModel(
     private val transactions: TransactionRepository,
     budgets: BudgetRepository,
     categories: CategoryRepository,
+    settings: SettingsRepository,
     private val clock: AppClock,
 ) : ViewModel() {
     private val today = clock.today()
     private val month = BudgetMonth.of(today)
-    private val currency = CurrencyCode.KES
     private val selectedDay = MutableStateFlow<LocalDate?>(null)
 
     val uiState: StateFlow<SpendUiState> = combine(
@@ -69,7 +71,8 @@ class SpendViewModel(
         budgets.observeMonth(month),
         categories.observeAll(),
         selectedDay,
-    ) { entries, monthBudgets, all, selected ->
+        settings.currency(),
+    ) { entries, monthBudgets, all, selected, currency ->
         val zero = Money.zero(currency)
         val byId = all.associateBy { it.id }
         val expenses = entries.filter { it.kind == EntryKind.Expense && it.amount.currency == currency }
@@ -108,7 +111,7 @@ class SpendViewModel(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        SpendUiState(true, month, Money.zero(currency), emptyList(), null, emptyList(), emptyList()),
+        SpendUiState(true, month, Money.zero(CurrencyCode.KES), emptyList(), null, emptyList(), emptyList()),
     )
 
     /** Tap a bar to see one day; tap it again, or pass null, to see the month. */

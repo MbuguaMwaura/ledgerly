@@ -28,7 +28,7 @@ struct AddDebtView: View {
                     )
 
                     FormField(label: "How much") {
-                        AmountField(currency: "KES", text: Binding(get: { model.state.amountText }, set: { viewModel.onAmountChange(text: $0) }))
+                        AmountField(currency: state.currency.code, text: Binding(get: { model.state.amountText }, set: { viewModel.onAmountChange(text: $0) }))
                     }
 
                     FormField(label: state.whoLabel) {

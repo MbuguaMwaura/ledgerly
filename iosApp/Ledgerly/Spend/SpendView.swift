@@ -6,12 +6,15 @@ private enum SpendMode: Hashable { case log, budgets }
 struct SpendView: View {
     let onOpenEntry: (String) -> Void
     let onEditBudgets: () -> Void
+    /// Off hides the Budgets view and the Set budgets prompt.
+    var trackBudgets = true
 
     @State private var model = SpendModel()
     @State private var mode: SpendMode = .log
 
     var body: some View {
         let state = model.state
+        let budgets = trackBudgets ? state.budgets : []
         let today = state.bars.first(where: { $0.isToday })?.date
         let daysLeft = today.map { Int(state.month.lengthInDays) - Int($0.dayOfMonth) + 1 }
 
@@ -36,7 +39,7 @@ struct SpendView: View {
                             .padding(.top, 20)
                     }
 
-                    if !state.budgets.isEmpty {
+                    if !budgets.isEmpty {
                         Segmented(
                             options: [SpendMode.log, SpendMode.budgets],
                             selection: mode,
@@ -46,17 +49,17 @@ struct SpendView: View {
                         .padding(.top, 20)
                     }
 
-                    if mode == .log || state.budgets.isEmpty {
+                    if mode == .log || budgets.isEmpty {
                         logSection(state)
                     } else {
                         HStack {
-                            Text("\(state.budgets.count) \(state.budgets.count == 1 ? "budget" : "budgets") this month")
+                            Text("\(budgets.count) \(budgets.count == 1 ? "budget" : "budgets") this month")
                                 .ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.ink)
                             Spacer()
                             Button("Edit budgets", action: onEditBudgets).buttonStyle(LinkButtonStyle())
                         }
                         .padding(.leading, 4).padding(.top, 12).padding(.bottom, 4)
-                        RowsCard(items: state.budgets) { BudgetRowView(row: $0, daysLeft: daysLeft) }
+                        RowsCard(items: budgets) { BudgetRowView(row: $0, daysLeft: daysLeft) }
                     }
                 }
                 .padding(.horizontal, LedgerlySpacing.space5)
@@ -98,7 +101,7 @@ struct SpendView: View {
             EmptyNote(text: state.selectedDay.map { "Nothing logged on \($0.short)." } ?? "Nothing logged this month yet. Tap + to log your first expense.")
                 .padding(.top, 12)
         }
-        if state.budgets.isEmpty && !state.isLoading {
+        if trackBudgets && state.budgets.isEmpty && !state.isLoading {
             Card {
                 Text("No budgets yet").ledgerlyText(LedgerlyText.heading).foregroundStyle(LedgerlyColor.ink)
                 Text("Set a monthly limit for the categories you want to watch. Home then shows what's left each day.")

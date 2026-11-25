@@ -10,16 +10,22 @@ import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
 import app.ledgerly.shared.domain.model.DebtPayment
 import app.ledgerly.shared.domain.model.EntryKind
+import app.ledgerly.shared.domain.model.ThemeChoice
 import app.ledgerly.shared.domain.model.Transaction
+import app.ledgerly.shared.domain.model.UserSettings
 import app.ledgerly.shared.domain.repository.BudgetRepository
 import app.ledgerly.shared.domain.repository.CategoryRepository
 import app.ledgerly.shared.domain.repository.DebtRepository
 import app.ledgerly.shared.domain.repository.LogRepository
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import app.ledgerly.shared.domain.repository.TransactionRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+
 import kotlinx.coroutines.flow.map
+import app.ledgerly.shared.money.CurrencyCode
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -150,4 +156,51 @@ class LocalDebtRepository(
         lastRemindedAt = last_reminded_at?.toInstant(),
         payments = payments.map { DebtPayment(it.id, it.debt_id, money(it.amount_minor, it.currency), it.paid_at.toInstant()) },
     )
+}
+
+class LocalSettingsRepository(
+    private val db: LedgerlyDatabase,
+    private val io: CoroutineDispatcher,
+) : SettingsRepository {
+    override fun observe(): Flow<UserSettings> =
+        db.settingQueries.selectAll().asFlow().mapToList(io)
+            .map { rows -> rows.associate { it.name to it.content }.toSettings() }
+            .distinctUntilChanged()
+
+    override suspend fun update(change: (UserSettings) -> UserSettings) = withContext<Unit>(io) {
+        db.transaction {
+            val current = db.settingQueries.selectAll().executeAsList().associate { it.name to it.content }.toSettings()
+            change(current).toMap().forEach { (key, value) -> db.settingQueries.upsert(key, value) }
+        }
+    }
+
+    private fun Map<String, String>.toSettings(): UserSettings {
+        val defaults = UserSettings()
+        return UserSettings(
+            name = this[NAME] ?: defaults.name,
+            currency = this[CURRENCY]?.let { code -> CurrencyCode.entries.firstOrNull { it.name == code } } ?: defaults.currency,
+            theme = this[THEME]?.let { t -> ThemeChoice.entries.firstOrNull { it.name == t } } ?: defaults.theme,
+            trackBudgets = this[TRACK_BUDGETS]?.toBooleanStrictOrNull() ?: defaults.trackBudgets,
+            trackDebts = this[TRACK_DEBTS]?.toBooleanStrictOrNull() ?: defaults.trackDebts,
+            startedOn = this[STARTED_ON]?.takeIf { it.isNotEmpty() }?.let(LocalDate::parse),
+        )
+    }
+
+    private fun UserSettings.toMap(): Map<String, String> = mapOf(
+        NAME to name,
+        CURRENCY to currency.name,
+        THEME to theme.name,
+        TRACK_BUDGETS to trackBudgets.toString(),
+        TRACK_DEBTS to trackDebts.toString(),
+        STARTED_ON to (startedOn?.toString() ?: ""),
+    )
+
+    private companion object {
+        const val NAME = "name"
+        const val CURRENCY = "currency"
+        const val THEME = "theme"
+        const val TRACK_BUDGETS = "track_budgets"
+        const val TRACK_DEBTS = "track_debts"
+        const val STARTED_ON = "started_on"
+    }
 }

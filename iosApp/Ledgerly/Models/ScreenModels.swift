@@ -167,3 +167,72 @@ final class TransactionDetailModel {
         owner.clear()
     }
 }
+
+@MainActor
+@Observable
+final class AppModel {
+    private(set) var state: AppUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: AppViewModel
+
+    init() {
+        viewModel = ViewModels.shared.app(owner: owner)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}
+
+@MainActor
+@Observable
+final class OnboardingModel {
+    private(set) var state: OnboardingUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: OnboardingViewModel
+
+    init() {
+        viewModel = ViewModels.shared.onboarding(owner: owner)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}
+
+@MainActor
+@Observable
+final class SettingsModel {
+    private(set) var state: SettingsUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: SettingsViewModel
+
+    init() {
+        viewModel = ViewModels.shared.settings(owner: owner)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}

@@ -15,7 +15,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DebtsViewModelTest : ViewModelTest() {
-    private fun viewModel() = DebtsViewModel(debts, RecordDebtPayment(debts, clock), MarkReminded(debts, clock), clock)
+    private fun viewModel() = DebtsViewModel(debts, RecordDebtPayment(debts, clock), MarkReminded(debts, clock), settings, clock)
 
     private val add get() = AddDebt(debts, clock)
 

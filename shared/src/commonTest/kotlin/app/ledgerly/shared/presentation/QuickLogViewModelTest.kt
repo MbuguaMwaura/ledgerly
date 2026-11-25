@@ -20,7 +20,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class QuickLogViewModelTest : ViewModelTest() {
-    private fun viewModel() = QuickLogViewModel(categories, logs, LogEntry(transactions, clock), clock)
+    private fun viewModel() = QuickLogViewModel(categories, logs, LogEntry(transactions, clock), settings, clock)
 
     private fun QuickLogViewModel.type(text: String) = text.forEach { c ->
         onKey(

@@ -1,5 +1,7 @@
 package app.ledgerly.android.ui
 
+import app.ledgerly.android.ui.settings.SettingsRoute
+import app.ledgerly.shared.presentation.app.AppUiState
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -67,17 +69,20 @@ private sealed interface Overlay {
     data class AddDebt(val direction: DebtDirection) : Overlay
     data object Budgets : Overlay
     data class Entry(val id: String) : Overlay
+    data object Settings : Overlay
 
     fun save(): String = when (this) {
         is AddDebt -> "add-debt:${direction.name}"
         Budgets -> "budgets"
         is Entry -> "entry:$id"
+        Settings -> "settings"
     }
 
     companion object {
         fun restore(saved: String?): Overlay? = when {
             saved == null -> null
             saved == "budgets" -> Budgets
+            saved == "settings" -> Settings
             saved.startsWith("add-debt:") -> AddDebt(DebtDirection.valueOf(saved.removePrefix("add-debt:")))
             saved.startsWith("entry:") -> Entry(saved.removePrefix("entry:"))
             else -> null
@@ -97,6 +102,8 @@ private val TABS = listOf(
  */
 @Composable
 fun LedgerlyRoot(
+    app: AppUiState,
+    versionName: String,
     homeViewModel: HomeViewModel = koinViewModel(),
     quickLogViewModel: QuickLogViewModel = koinViewModel(),
     debtsViewModel: DebtsViewModel = koinViewModel(),
@@ -104,6 +111,8 @@ fun LedgerlyRoot(
     val colors = LedgerlyTheme.colors
     val home by homeViewModel.uiState.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(Tab.Home) }
+    val tabs = TABS.filter { it.id != Tab.Debts || app.trackDebts }
+    val shownTab = if (tab == Tab.Debts && !app.trackDebts) Tab.Home else tab
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     var logging by rememberSaveable { mutableStateOf(false) }
     var toast by remember { mutableStateOf<String?>(null) }
@@ -134,25 +143,30 @@ fun LedgerlyRoot(
         }
     }
     BackHandler(enabled = menuOpen) { menuOpen = false }
-    BackHandler(enabled = !menuOpen && tab != Tab.Home) { tab = Tab.Home }
+    BackHandler(enabled = !menuOpen && shownTab != Tab.Home) { tab = Tab.Home }
 
     Box(
         Modifier
             .fillMaxSize()
             .background(colors.canvas),
     ) {
-        when (tab) {
+        when (shownTab) {
             Tab.Home -> HomeRoute(
                 onLogExpense = { openLog(EntryKind.Expense) },
                 onOpenSpend = { tab = Tab.Spend },
                 onOpenDebts = { tab = Tab.Debts },
                 onOpenEntry = { open(Overlay.Entry(it)) },
                 onEditBudgets = { open(Overlay.Budgets) },
+                onOpenSettings = { open(Overlay.Settings) },
+                firstName = app.firstName,
+                trackBudgets = app.trackBudgets,
+                trackDebts = app.trackDebts,
                 viewModel = homeViewModel,
             )
             Tab.Spend -> SpendRoute(
                 onOpenEntry = { open(Overlay.Entry(it)) },
                 onEditBudgets = { open(Overlay.Budgets) },
+                trackBudgets = app.trackBudgets,
             )
             Tab.Debts -> DebtsRoute(
                 onAddDebt = { open(Overlay.AddDebt(it)) },
@@ -199,8 +213,8 @@ fun LedgerlyRoot(
                 )
             }
             TabBar(
-                items = TABS,
-                selected = tab,
+                items = tabs,
+                selected = shownTab,
                 onSelect = {
                     menuOpen = false
                     tab = it
@@ -226,6 +240,11 @@ fun LedgerlyRoot(
                         )
                         Overlay.Budgets -> EditBudgetsRoute(onSaved = { close("Budgets saved.") }, onClose = { close() })
                         is Overlay.Entry -> TransactionDetailRoute(page.id, onDone = { close(it) }, onClose = { close() })
+                        Overlay.Settings -> SettingsRoute(
+                            versionName = versionName,
+                            onEditBudgets = { open(Overlay.Budgets) },
+                            onClose = { close() },
+                        )
                     }
                 }
             }

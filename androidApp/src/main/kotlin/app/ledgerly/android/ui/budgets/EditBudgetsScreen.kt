@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalContentColor
@@ -60,7 +61,7 @@ fun EditBudgetsRoute(
     EditBudgetsScreen(state, viewModel::onLimitChange, viewModel::onStep, viewModel::onSave, onClose)
 }
 
-/** A monthly limit per expense category, each with − and + to move it by KES 500. */
+/** A monthly limit per expense category, each with − and + to move it by 500. */
 @Composable
 fun EditBudgetsScreen(
     state: EditBudgetsUiState,
@@ -69,27 +70,8 @@ fun EditBudgetsScreen(
     onSave: () -> Unit,
     onClose: () -> Unit,
 ) {
-    val colors = LedgerlyTheme.colors
     Page(title = "Budgets", onClose = onClose, closeLabel = "Cancel") {
-        item("total") {
-            LedgerlyCard {
-                Text("Monthly total", style = LedgerlyTextStyles.label, color = colors.inkMuted)
-                Amount(state.total, style = LedgerlyTextStyles.amount, showFraction = false, modifier = Modifier.padding(top = 4.dp))
-                Text(state.totalText, style = LedgerlyTextStyles.caption, color = colors.inkMuted, modifier = Modifier.padding(top = 6.dp))
-            }
-        }
-        item("head") { GroupTitle("Per category") }
-        item("rows") {
-            RowsCard(state.rows) { row -> BudgetEditRow(row, onLimitChange, onStep) }
-        }
-        item("hint") {
-            Text(
-                "The buttons move a budget by KES 500. A budget carries over to next month until you change it. Clear one to stop tracking that category.",
-                style = LedgerlyTextStyles.caption,
-                color = colors.inkMuted,
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
-            )
-        }
+        budgetEditorItems(state, onLimitChange, onStep)
         item("actions") {
             Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 LedgerlyButton("Save budgets", onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth())
@@ -99,8 +81,35 @@ fun EditBudgetsScreen(
     }
 }
 
+/** The total card, a row per category and the hint. Shared with onboarding's budgets step. */
+fun LazyListScope.budgetEditorItems(
+    state: EditBudgetsUiState,
+    onLimitChange: (String, String) -> Unit,
+    onStep: (String, Boolean) -> Unit,
+) {
+    item("total") {
+        LedgerlyCard {
+            Text("Monthly total", style = LedgerlyTextStyles.label, color = LedgerlyTheme.colors.inkMuted)
+            Amount(state.total, style = LedgerlyTextStyles.amount, showFraction = false, modifier = Modifier.padding(top = 4.dp))
+            Text(state.totalText, style = LedgerlyTextStyles.caption, color = LedgerlyTheme.colors.inkMuted, modifier = Modifier.padding(top = 6.dp))
+        }
+    }
+    item("head") { GroupTitle("Per category") }
+    item("rows") {
+        RowsCard(state.rows) { row -> BudgetEditRow(row, state.currency.code, onLimitChange, onStep) }
+    }
+    item("hint") {
+        Text(
+            "The buttons move a budget by ${state.currency.code} 500. A budget carries over to next month until you change it. Clear one to stop tracking that category.",
+            style = LedgerlyTextStyles.caption,
+            color = LedgerlyTheme.colors.inkMuted,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+        )
+    }
+}
+
 @Composable
-private fun BudgetEditRow(row: BudgetEditRowState, onLimitChange: (String, String) -> Unit, onStep: (String, Boolean) -> Unit) {
+private fun BudgetEditRow(row: BudgetEditRowState, currency: String, onLimitChange: (String, String) -> Unit, onStep: (String, Boolean) -> Unit) {
     val colors = LedgerlyTheme.colors
     val noteColor = when (row.tone) {
         BudgetTone.OnTrack -> colors.inkMuted
@@ -118,7 +127,7 @@ private fun BudgetEditRow(row: BudgetEditRowState, onLimitChange: (String, Strin
             Text(row.categoryName, style = LedgerlyTextStyles.body, color = colors.ink)
             Text(row.note, style = LedgerlyTextStyles.caption, color = noteColor)
         }
-        StepButton("Lower ${row.categoryName} by KES 500", enabled = row.canDecrease, onClick = { onStep(row.categoryId, false) }) {
+        StepButton("Lower ${row.categoryName} by $currency 500", enabled = row.canDecrease, onClick = { onStep(row.categoryId, false) }) {
             LedgerlyIcon(LedgerlyIcons.Minus, size = 18.dp)
         }
         BasicTextField(
@@ -133,7 +142,7 @@ private fun BudgetEditRow(row: BudgetEditRowState, onLimitChange: (String, Strin
                 .clip(RoundedCornerShape(10.dp))
                 .background(colors.surfaceSunk)
                 .padding(horizontal = 8.dp, vertical = 10.dp)
-                .semantics { contentDescription = "${row.categoryName} budget in KES" },
+                .semantics { contentDescription = "${row.categoryName} budget in $currency" },
             decorationBox = { inner ->
                 Box(contentAlignment = Alignment.Center) {
                     if (row.limitText.isEmpty()) Text("0", style = LedgerlyTextStyles.label, color = colors.inkFaint)
@@ -141,7 +150,7 @@ private fun BudgetEditRow(row: BudgetEditRowState, onLimitChange: (String, Strin
                 }
             },
         )
-        StepButton("Raise ${row.categoryName} by KES 500", enabled = true, onClick = { onStep(row.categoryId, true) }) {
+        StepButton("Raise ${row.categoryName} by $currency 500", enabled = true, onClick = { onStep(row.categoryId, true) }) {
             LedgerlyIcon(LedgerlyIcons.Plus, size = 18.dp)
         }
     }

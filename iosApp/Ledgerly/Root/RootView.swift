@@ -26,12 +26,14 @@ enum AppSheet: Identifiable {
     case addDebt(DebtDirection)
     case budgets
     case entry(String)
+    case settings
 
     var id: String {
         switch self {
         case .addDebt: "add-debt"
         case .budgets: "budgets"
         case .entry(let id): "entry-\(id)"
+        case .settings: "settings"
         }
     }
 }
@@ -39,6 +41,8 @@ enum AppSheet: Identifiable {
 /// The app shell: three tabs under a floating Liquid Glass tab bar with the + beside it, the
 /// Expense / Income menu, the Quick log sheet and the confirmation toast.
 struct RootView: View {
+    let app: AppUiState
+
     @State private var tab: AppTab = .home
     @State private var home = HomeModel()
     @State private var quickLog = QuickLogModel()
@@ -49,9 +53,10 @@ struct RootView: View {
     @State private var toast: String?
 
     var body: some View {
+        let shownTab: AppTab = tab == .debts && !app.trackDebts ? .home : tab
         ZStack(alignment: .bottom) {
             Group {
-                switch tab {
+                switch shownTab {
                 case .home:
                     HomeView(
                         model: home,
@@ -59,10 +64,14 @@ struct RootView: View {
                         onOpenSpend: { tab = .spend },
                         onOpenDebts: { tab = .debts },
                         onOpenEntry: { page = .entry($0) },
-                        onEditBudgets: { page = .budgets }
+                        onEditBudgets: { page = .budgets },
+                        onOpenSettings: { page = .settings },
+                        firstName: app.firstName,
+                        trackBudgets: app.trackBudgets,
+                        trackDebts: app.trackDebts
                     )
                 case .spend:
-                    SpendView(onOpenEntry: { page = .entry($0) }, onEditBudgets: { page = .budgets })
+                    SpendView(onOpenEntry: { page = .entry($0) }, onEditBudgets: { page = .budgets }, trackBudgets: app.trackBudgets)
                 case .debts:
                     DebtsView(model: debts, onAddDebt: { page = .addDebt($0) })
                 }
@@ -91,7 +100,8 @@ struct RootView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 LedgerlyTabBar(
-                    selection: tab,
+                    tabs: AppTab.allCases.filter { $0 != .debts || app.trackDebts },
+                    selection: shownTab,
                     onSelect: { selected in
                         menuOpen = false
                         tab = selected
@@ -146,6 +156,8 @@ struct RootView: View {
                 EditBudgetsView(onSaved: { close("Budgets saved.") }, onClose: { close() })
             case .entry(let id):
                 TransactionDetailView(entryId: id, onDone: { close($0) }, onClose: { close() })
+            case .settings:
+                SettingsView(onEditBudgets: { page = .budgets }, onClose: { close() })
             }
         }
     }
@@ -165,6 +177,7 @@ struct RootView: View {
 
 /// The floating tab bar: a glass capsule of tabs and the round + tinted with cobalt.
 struct LedgerlyTabBar: View {
+    let tabs: [AppTab]
     let selection: AppTab
     let onSelect: (AppTab) -> Void
     let menuOpen: Bool
@@ -175,7 +188,7 @@ struct LedgerlyTabBar: View {
         GlassGroup(spacing: 12) {
             HStack(spacing: 12) {
                 HStack(spacing: 2) {
-                    ForEach(AppTab.allCases, id: \.self) { item in
+                    ForEach(tabs, id: \.self) { item in
                         let on = item == selection
                         Button { onSelect(item) } label: {
                             VStack(spacing: 2) {

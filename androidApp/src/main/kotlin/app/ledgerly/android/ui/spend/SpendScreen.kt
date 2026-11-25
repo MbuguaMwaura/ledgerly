@@ -51,11 +51,13 @@ private enum class SpendView(val label: String) { Log("Daily log"), Budgets("Bud
 fun SpendRoute(
     onOpenEntry: (String) -> Unit,
     onEditBudgets: () -> Unit,
+    trackBudgets: Boolean,
     modifier: Modifier = Modifier,
     viewModel: SpendViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    SpendScreen(state, viewModel::onSelectDay, onOpenEntry, onEditBudgets, modifier)
+    // With budgets switched off, Spend is just the log.
+    SpendScreen(if (trackBudgets) state else state.copy(budgets = emptyList()), viewModel::onSelectDay, onOpenEntry, onEditBudgets, modifier, offerBudgets = trackBudgets)
 }
 
 @Composable
@@ -65,6 +67,7 @@ fun SpendScreen(
     onOpenEntry: (String) -> Unit,
     onEditBudgets: () -> Unit,
     modifier: Modifier = Modifier,
+    offerBudgets: Boolean = true,
 ) {
     val colors = LedgerlyTheme.colors
     var view by rememberSaveable { mutableStateOf(SpendView.Log) }
@@ -148,7 +151,7 @@ fun SpendScreen(
                     )
                 }
             }
-            if (state.budgets.isEmpty() && !state.isLoading) {
+            if (offerBudgets && state.budgets.isEmpty() && !state.isLoading) {
                 item("set-budgets") {
                     LedgerlyCard(Modifier.padding(top = 24.dp)) {
                         Text("No budgets yet", style = LedgerlyTextStyles.heading, color = colors.ink)

@@ -1,5 +1,7 @@
 package app.ledgerly.shared.presentation.budgets
 
+import app.ledgerly.shared.presentation.common.currency
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.Budget
@@ -40,6 +42,7 @@ data class BudgetEditRowState(
 
 data class EditBudgetsUiState(
     val isLoading: Boolean,
+    val currency: CurrencyCode,
     val rows: List<BudgetEditRowState>,
     /** The sum of every limit as typed. */
     val total: Money,
@@ -59,9 +62,11 @@ class EditBudgetsViewModel(
     categories: CategoryRepository,
     private val budgets: BudgetRepository,
     transactions: TransactionRepository,
+    settings: SettingsRepository,
     private val clock: AppClock,
 ) : ViewModel() {
-    private val currency = CurrencyCode.KES
+    /** The user's currency, kept current by [uiState]. */
+    private var currency = CurrencyCode.KES
     private val month = BudgetMonth.of(clock.today())
 
     private data class Input(
@@ -81,7 +86,9 @@ class EditBudgetsViewModel(
         budgets.observeMonth(month),
         transactions.observeBetween(month.firstDay, month.lastDay),
         input,
-    ) { all, monthBudgets, entries, current ->
+        settings.currency(),
+    ) { all, monthBudgets, entries, current, code ->
+        currency = code
         val zero = Money.zero(currency)
         saved = monthBudgets.filter { it.limit.currency == currency }.associate { it.categoryId to it.limit.toInputText() }
         val spentByCategory = entries.filter { it.kind == EntryKind.Expense && it.amount.currency == currency }
@@ -114,6 +121,7 @@ class EditBudgetsViewModel(
         val changed = changedLimits(current.edits).isNotEmpty()
         EditBudgetsUiState(
             isLoading = false,
+            currency = currency,
             rows = rows,
             total = total,
             totalText = when (count) {
@@ -128,7 +136,7 @@ class EditBudgetsViewModel(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        EditBudgetsUiState(true, emptyList(), Money.zero(currency), "", hasChanges = false, canSave = false, isSaved = false),
+        EditBudgetsUiState(true, CurrencyCode.KES, emptyList(), Money.zero(currency), "", hasChanges = false, canSave = false, isSaved = false),
     )
 
     fun onLimitChange(categoryId: String, text: String) {

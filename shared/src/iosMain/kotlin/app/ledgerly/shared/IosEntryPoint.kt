@@ -8,10 +8,13 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import app.ledgerly.shared.di.platformModule
 import app.ledgerly.shared.di.sharedModule
 import app.ledgerly.shared.presentation.adddebt.AddDebtViewModel
+import app.ledgerly.shared.presentation.app.AppViewModel
 import app.ledgerly.shared.presentation.budgets.EditBudgetsViewModel
 import app.ledgerly.shared.presentation.debts.DebtsViewModel
 import app.ledgerly.shared.presentation.home.HomeViewModel
+import app.ledgerly.shared.presentation.onboarding.OnboardingViewModel
 import app.ledgerly.shared.presentation.quicklog.QuickLogViewModel
+import app.ledgerly.shared.presentation.settings.SettingsViewModel
 import app.ledgerly.shared.presentation.spend.SpendViewModel
 import app.ledgerly.shared.presentation.transaction.TransactionDetailViewModel
 import org.koin.core.component.KoinComponent
@@ -56,6 +59,12 @@ object ViewModels : KoinComponent {
 
     fun transactionDetail(owner: ScreenViewModelOwner): TransactionDetailViewModel =
         provide(owner, TransactionDetailViewModel::class) { get() }
+
+    fun app(owner: ScreenViewModelOwner): AppViewModel = provide(owner, AppViewModel::class) { get() }
+
+    fun onboarding(owner: ScreenViewModelOwner): OnboardingViewModel = provide(owner, OnboardingViewModel::class) { get() }
+
+    fun settings(owner: ScreenViewModelOwner): SettingsViewModel = provide(owner, SettingsViewModel::class) { get() }
 
     private fun <VM : ViewModel> provide(owner: ScreenViewModelOwner, type: KClass<VM>, create: () -> VM): VM {
         val factory = object : ViewModelProvider.Factory {
