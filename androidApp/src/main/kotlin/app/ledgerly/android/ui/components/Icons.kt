@@ -1,0 +1,60 @@
+package app.ledgerly.android.ui.components
+
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.addPathNodes
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+
+/**
+ * Ledgerly Clean's icon set: 24dp, 2dp-stroke outlines. Drawn in black and tinted by [LedgerlyIcon],
+ * so they follow the surrounding content colour.
+ */
+object LedgerlyIcons {
+    val Plus = icon("Plus", "M12 5v14M5 12h14")
+    val Close = icon("Close", "M6 6l12 12M18 6L6 18")
+    val Check = icon("Check", "M5 12.5l4.5 4.5L19 7.5")
+    val Flame = icon("Flame", "M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.8 1.2 2.8 2.3 3.2C10.8 9 11.5 6 12 3z")
+    val Snow = icon("Snow", "M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9")
+    val Send = icon("Send", "M4 12l16-8-6 16-2.5-6.5L4 12z")
+    val Back = icon("Back", "M14 7l-5 5 5 5M20 12H9")
+    val Up = icon("Up", "M12 19V5M6 11l6-6 6 6")
+    val Down = icon("Down", "M12 5v14M6 13l6 6 6-6")
+    val Home = icon("Home", "M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z")
+    val Wallet = icon("Wallet", "M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 7l11-3v3M16 13.5h.01")
+    val People = icon("People", "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 2.7-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M18 15c2 .6 3 2.2 3 5")
+
+    private fun icon(name: String, path: String): ImageVector =
+        ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
+            .addPath(
+                pathData = addPathNodes(path),
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            .build()
+}
+
+@Composable
+fun LedgerlyIcon(
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    size: Dp = 24.dp,
+    tint: Color = Color.Unspecified,
+) {
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = modifier.size(size),
+        tint = if (tint == Color.Unspecified) androidx.compose.material3.LocalContentColor.current else tint,
+    )
+}
