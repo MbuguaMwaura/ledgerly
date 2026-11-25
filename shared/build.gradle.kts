@@ -31,7 +31,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
             api(libs.androidx.lifecycle.viewmodel)
-            implementation(project.dependencies.platform(libs.koin.bom))
+            api(project.dependencies.platform(libs.koin.bom))
             api(libs.koin.core)
             implementation(libs.koin.core.viewmodel)
         }
