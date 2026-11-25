@@ -11,6 +11,7 @@ import app.ledgerly.shared.domain.usecase.LogEntry
 import app.ledgerly.shared.domain.usecase.LogNothingSpent
 import app.ledgerly.shared.domain.usecase.ObserveHomeSummary
 import app.ledgerly.shared.presentation.home.HomeViewModel
+import app.ledgerly.shared.presentation.home.StreakMark
 import app.ledgerly.shared.testing.nairobi
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -85,6 +86,41 @@ class HomeViewModelTest : ViewModelTest() {
             vm.onNothingSpentToday()
             val state = awaitState { it.streak.loggedToday }
             assertEquals(1, state.streak.current)
+        }
+    }
+
+    @Test
+    fun weekRowMarksLoggedMissedOpenAndFutureDays() = test {
+        val nothing = LogNothingSpent(logs, clock)
+        clock.now = nairobi("2026-11-23T20:00") // Monday
+        nothing()
+        clock.now = nairobi("2026-11-25T18:00") // Wednesday, not logged yet
+
+        viewModel().uiState.test {
+            val state = awaitState { !it.isLoading }
+            assertEquals(
+                listOf(StreakMark.Logged, StreakMark.Missed, StreakMark.Open, StreakMark.Future, StreakMark.Future, StreakMark.Future, StreakMark.Future),
+                state.week.map { it.mark },
+            )
+            assertEquals(listOf("M", "T", "W", "T", "F", "S", "S"), state.week.map { it.letter })
+            assertTrue(state.week[2].isToday)
+            assertEquals(3, state.nextMilestone)
+        }
+    }
+
+    @Test
+    fun listsTheLatestEntriesUnderRecent() = test {
+        val log = LogEntry(transactions, clock)
+        log(EntryKind.Expense, kes(100), "transport", occurredAt = nairobi("2026-11-20T08:00"))
+        log(EntryKind.Expense, kes(200), "food", note = "Java House", occurredAt = nairobi("2026-11-24T13:00"))
+        log(EntryKind.Income, kes(4_000), "salary", occurredAt = nairobi("2026-11-25T09:00"))
+        log(EntryKind.Expense, kes(300), "food", occurredAt = nairobi("2026-11-25T12:30"))
+
+        viewModel().uiState.test {
+            val state = awaitState { it.recent.size == 3 }
+            assertEquals(listOf("Food", "Salary", "Java House"), state.recent.map { it.title })
+            assertEquals("12:30", state.recent.first().time)
+            assertEquals(kes(4_000), state.recent[1].signedAmount)
         }
     }
 }

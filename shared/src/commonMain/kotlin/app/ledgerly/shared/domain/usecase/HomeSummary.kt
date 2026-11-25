@@ -4,6 +4,7 @@ import app.ledgerly.shared.domain.model.BudgetMonth
 import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
 import app.ledgerly.shared.domain.model.EntryKind
+import app.ledgerly.shared.domain.model.Transaction
 import app.ledgerly.shared.domain.repository.BudgetRepository
 import app.ledgerly.shared.domain.repository.DebtRepository
 import app.ledgerly.shared.domain.repository.LogRepository
@@ -22,6 +23,7 @@ import app.ledgerly.shared.money.CurrencyCode
 import app.ledgerly.shared.money.Money
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.datetime.LocalDate
 
 data class HomeSummary(
     val month: BudgetMonth,
@@ -31,9 +33,16 @@ data class HomeSummary(
     /** Budgets at 80% or more, most used first. */
     val needsALook: List<BudgetStatus>,
     val streak: StreakState,
+    /** Every logical day with a log, for the streak card's week row. */
+    val loggedDays: Set<LocalDate>,
+    /** The month's latest entries, newest first. */
+    val recent: List<Transaction>,
     /** Unsettled debts owed to the user that are overdue or due within 3 days. */
     val debtsDueSoon: List<Pair<Debt, DueStatus>>,
 )
+
+/** How many entries Home lists under Recent. */
+const val RECENT_COUNT = 3
 
 /** Everything the Home tab shows for the current month, recomputed when any of it changes. */
 class ObserveHomeSummary(
@@ -74,6 +83,8 @@ class ObserveHomeSummary(
                 budgets = statuses,
                 needsALook = budgetsNeedingALook(statuses),
                 streak = calculateStreak(loggedDays, today),
+                loggedDays = loggedDays,
+                recent = entries.sortedByDescending { it.occurredAt }.take(RECENT_COUNT),
                 debtsDueSoon = dueSoon,
             )
         }
