@@ -17,8 +17,8 @@ import app.ledgerly.android.ui.theme.LedgerlyTheme
 import app.ledgerly.android.ui.theme.tokens.LedgerlyRadius
 import app.ledgerly.android.ui.theme.tokens.LedgerlySpacing
 import app.ledgerly.android.ui.theme.tokens.LedgerlyTextStyles
-import app.ledgerly.shared.home.HomeUiState
-import app.ledgerly.shared.home.HomeViewModel
+import app.ledgerly.shared.presentation.home.HomeUiState
+import app.ledgerly.shared.presentation.home.HomeViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

@@ -7,7 +7,10 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import app.ledgerly.shared.di.platformModule
 import app.ledgerly.shared.di.sharedModule
-import app.ledgerly.shared.home.HomeViewModel
+import app.ledgerly.shared.presentation.debts.DebtsViewModel
+import app.ledgerly.shared.presentation.home.HomeViewModel
+import app.ledgerly.shared.presentation.quicklog.QuickLogViewModel
+import app.ledgerly.shared.presentation.spend.SpendViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.context.startKoin
@@ -37,6 +40,12 @@ class ScreenViewModelOwner : ViewModelStoreOwner {
 /** Hands Swift the shared ViewModels, built by Koin and owned by a [ScreenViewModelOwner]. */
 object ViewModels : KoinComponent {
     fun home(owner: ScreenViewModelOwner): HomeViewModel = provide(owner, HomeViewModel::class) { get() }
+
+    fun spend(owner: ScreenViewModelOwner): SpendViewModel = provide(owner, SpendViewModel::class) { get() }
+
+    fun debts(owner: ScreenViewModelOwner): DebtsViewModel = provide(owner, DebtsViewModel::class) { get() }
+
+    fun quickLog(owner: ScreenViewModelOwner): QuickLogViewModel = provide(owner, QuickLogViewModel::class) { get() }
 
     private fun <VM : ViewModel> provide(owner: ScreenViewModelOwner, type: KClass<VM>, create: () -> VM): VM {
         val factory = object : ViewModelProvider.Factory {
