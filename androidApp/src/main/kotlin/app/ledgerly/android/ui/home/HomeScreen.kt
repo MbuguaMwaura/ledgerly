@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ledgerly.android.ui.components.Amount
 import app.ledgerly.android.ui.components.BudgetRow
+import app.ledgerly.android.ui.components.LedgerlyButton
+import app.ledgerly.android.ui.components.ButtonStyle
 import app.ledgerly.android.ui.components.EmptyNote
 import app.ledgerly.android.ui.components.EntryRow
 import app.ledgerly.android.ui.components.Gauge
@@ -60,6 +62,8 @@ fun HomeRoute(
     onLogExpense: () -> Unit,
     onOpenSpend: () -> Unit,
     onOpenDebts: () -> Unit,
+    onOpenEntry: (String) -> Unit,
+    onEditBudgets: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -70,6 +74,8 @@ fun HomeRoute(
         onNothingSpent = viewModel::onNothingSpentToday,
         onOpenSpend = onOpenSpend,
         onOpenDebts = onOpenDebts,
+        onOpenEntry = onOpenEntry,
+        onEditBudgets = onEditBudgets,
         modifier = modifier,
     )
 }
@@ -81,6 +87,8 @@ fun HomeScreen(
     onNothingSpent: () -> Unit,
     onOpenSpend: () -> Unit,
     onOpenDebts: () -> Unit,
+    onOpenEntry: (String) -> Unit,
+    onEditBudgets: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LedgerlyTheme.colors
@@ -118,6 +126,9 @@ fun HomeScreen(
                     color = colors.inkMuted,
                     modifier = Modifier.padding(top = 6.dp),
                 )
+                if (!hasBudgets && !state.isLoading) {
+                    LedgerlyButton("Set budgets", onEditBudgets, style = ButtonStyle.Soft, small = true, modifier = Modifier.padding(top = 12.dp))
+                }
                 Row(
                     Modifier
                         .padding(top = 20.dp)
@@ -158,7 +169,7 @@ fun HomeScreen(
                 LedgerlyCard(Modifier.padding(top = LedgerlySpacing.space3)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Budgets", style = LedgerlyTextStyles.heading, color = colors.ink)
-                        LinkButton("See all", onOpenSpend)
+                        LinkButton("Edit", onEditBudgets)
                     }
                     Gauge(state.budgetPercentUsed / 100f, Modifier.align(Alignment.CenterHorizontally)) {
                         Text("Budget used", style = LedgerlyTextStyles.caption, color = colors.inkMuted)
@@ -187,7 +198,7 @@ fun HomeScreen(
             if (state.recent.isEmpty()) {
                 LedgerlyCard { EmptyNote(if (state.isLoading) "" else "Nothing logged this month yet. Tap + to log your first expense.") }
             } else {
-                RowsCard(state.recent) { EntryRow(it) }
+                RowsCard(state.recent) { EntryRow(it, onClick = { onOpenEntry(it.id) }) }
             }
         }
 

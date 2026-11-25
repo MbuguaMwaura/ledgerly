@@ -7,10 +7,13 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import app.ledgerly.shared.di.platformModule
 import app.ledgerly.shared.di.sharedModule
+import app.ledgerly.shared.presentation.adddebt.AddDebtViewModel
+import app.ledgerly.shared.presentation.budgets.EditBudgetsViewModel
 import app.ledgerly.shared.presentation.debts.DebtsViewModel
 import app.ledgerly.shared.presentation.home.HomeViewModel
 import app.ledgerly.shared.presentation.quicklog.QuickLogViewModel
 import app.ledgerly.shared.presentation.spend.SpendViewModel
+import app.ledgerly.shared.presentation.transaction.TransactionDetailViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.context.startKoin
@@ -46,6 +49,13 @@ object ViewModels : KoinComponent {
     fun debts(owner: ScreenViewModelOwner): DebtsViewModel = provide(owner, DebtsViewModel::class) { get() }
 
     fun quickLog(owner: ScreenViewModelOwner): QuickLogViewModel = provide(owner, QuickLogViewModel::class) { get() }
+
+    fun addDebt(owner: ScreenViewModelOwner): AddDebtViewModel = provide(owner, AddDebtViewModel::class) { get() }
+
+    fun editBudgets(owner: ScreenViewModelOwner): EditBudgetsViewModel = provide(owner, EditBudgetsViewModel::class) { get() }
+
+    fun transactionDetail(owner: ScreenViewModelOwner): TransactionDetailViewModel =
+        provide(owner, TransactionDetailViewModel::class) { get() }
 
     private fun <VM : ViewModel> provide(owner: ScreenViewModelOwner, type: KClass<VM>, create: () -> VM): VM {
         val factory = object : ViewModelProvider.Factory {

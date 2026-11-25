@@ -96,3 +96,74 @@ final class QuickLogModel {
         owner.clear()
     }
 }
+
+@MainActor
+@Observable
+final class AddDebtModel {
+    private(set) var state: AddDebtUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: AddDebtViewModel
+
+    init(direction: DebtDirection) {
+        viewModel = ViewModels.shared.addDebt(owner: owner)
+        viewModel.onDirectionChange(direction: direction)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}
+
+@MainActor
+@Observable
+final class EditBudgetsModel {
+    private(set) var state: EditBudgetsUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: EditBudgetsViewModel
+
+    init() {
+        viewModel = ViewModels.shared.editBudgets(owner: owner)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}
+
+@MainActor
+@Observable
+final class TransactionDetailModel {
+    private(set) var state: TransactionDetailUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: TransactionDetailViewModel
+
+    init(entryId: String) {
+        viewModel = ViewModels.shared.transactionDetail(owner: owner)
+        viewModel.load(id: entryId)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}

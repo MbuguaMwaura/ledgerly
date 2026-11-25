@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -146,6 +148,7 @@ fun DebtorRow(
     onRecordPayment: () -> Unit,
     onSend: (String) -> Unit,
     modifier: Modifier = Modifier,
+    showActions: Boolean = true,
 ) {
     val colors = LedgerlyTheme.colors
     val overdue = row.status is DueStatus.Overdue
@@ -179,7 +182,9 @@ fun DebtorRow(
                 }
             }
         }
-        if (settled) {
+        if (!showActions) {
+            Spacer(Modifier.height(8.dp))
+        } else if (settled) {
             Text(
                 "Paid in full",
                 style = LedgerlyTextStyles.caption,
@@ -240,7 +245,7 @@ fun DebtorRow(
 
 /** Money the user owes: balance, how much is paid off, and Record payment. */
 @Composable
-fun LoanRow(row: DebtRowState, onRecordPayment: () -> Unit, modifier: Modifier = Modifier) {
+fun LoanRow(row: DebtRowState, onRecordPayment: () -> Unit, modifier: Modifier = Modifier, showActions: Boolean = true) {
     val colors = LedgerlyTheme.colors
     val overdue = row.status is DueStatus.Overdue
     val settled = row.status == DueStatus.Settled
@@ -266,7 +271,9 @@ fun LoanRow(row: DebtRowState, onRecordPayment: () -> Unit, modifier: Modifier =
                 Text("${row.percentPaid}% paid off of ${row.principal.label()}", style = LedgerlyTextStyles.caption, color = colors.inkMuted)
             }
         }
-        if (!settled) {
+        if (!showActions) {
+            Spacer(Modifier.height(8.dp))
+        } else if (!settled) {
             Row(
                 Modifier
                     .fillMaxWidth()

@@ -11,6 +11,19 @@ CREATE TABLE budget (
 selectForMonth:
 SELECT * FROM budget WHERE month = ?;
 
+-- The limit in force for each category in :month: the latest one set in or before it.
+-- A budget carries over month to month until it is changed; a limit of 0 removes it.
+selectEffective:
+SELECT budget.*
+FROM budget
+JOIN (
+    SELECT category_id AS latest_category, MAX(month) AS latest_month
+    FROM budget
+    WHERE month <= :month
+    GROUP BY category_id
+) ON budget.category_id = latest_category AND budget.month = latest_month
+WHERE budget.limit_minor > 0;
+
 upsert:
 INSERT OR REPLACE INTO budget (category_id, month, limit_minor, currency, updated_at) VALUES (?, ?, ?, ?, ?);
 
