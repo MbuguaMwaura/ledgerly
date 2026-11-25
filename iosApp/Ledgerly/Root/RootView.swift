@@ -140,8 +140,8 @@ struct RootView: View {
                 onClose: { logging = false }
             )
         }
-        .sheet(item: $page) { page in
-            switch page {
+        .sheet(item: $page) { sheet in
+            switch sheet {
             case .addDebt(let direction):
                 AddDebtView(
                     direction: direction,
