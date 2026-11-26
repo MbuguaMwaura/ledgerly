@@ -118,6 +118,13 @@ struct RootView: View {
         .background(LedgerlyColor.canvas.ignoresSafeArea())
         .tint(LedgerlyColor.cobalt)
         .task { await home.observe() }
+        .onChange(of: app.isLocked) { _, locked in
+            // The lock screen sits under any open sheet, so close them.
+            guard locked else { return }
+            page = nil
+            logging = false
+            menuOpen = false
+        }
         .task { await quickLog.observe() }
         .task(id: toast) {
             guard toast != nil else { return }

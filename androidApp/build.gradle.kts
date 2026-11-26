@@ -70,6 +70,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

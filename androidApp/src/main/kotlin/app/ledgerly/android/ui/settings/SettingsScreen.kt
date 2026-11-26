@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ledgerly.android.lock.rememberCanUseAppLock
+import app.ledgerly.android.lock.rememberAuthenticator
 import app.ledgerly.android.reminders.rememberNotificationPermission
 import app.ledgerly.android.ui.components.Chip
 import app.ledgerly.android.ui.components.Field
@@ -52,8 +54,14 @@ fun SettingsRoute(
         notificationsBlocked = !granted
         if (granted) viewModel.onReminderChange(true)
     }
+    val authenticate = rememberAuthenticator()
     SettingsScreen(
         state = state,
+        canUseAppLock = rememberCanUseAppLock(),
+        onAppLockChange = { on ->
+            if (on) authenticate("Turn on app lock") { ok -> if (ok) viewModel.onAppLockChange(true) }
+            else viewModel.onAppLockChange(false)
+        },
         versionName = versionName,
         onNameChange = viewModel::onNameChange,
         onThemeChange = viewModel::onThemeChange,
@@ -82,6 +90,8 @@ private data class SettingItem(
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
+    canUseAppLock: Boolean,
+    onAppLockChange: (Boolean) -> Unit,
     versionName: String,
     onNameChange: (String) -> Unit,
     onThemeChange: (ThemeChoice) -> Unit,
@@ -172,6 +182,26 @@ fun SettingsScreen(
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp),
                 )
             }
+        }
+
+        item("privacy-head") { GroupTitle("Privacy") }
+        item("privacy") {
+            SettingRows(
+                listOf(
+                    SettingItem(
+                        "app-lock",
+                        "App lock",
+                        sub = if (canUseAppLock || state.appLock) {
+                            "Ask for your fingerprint, face or screen lock when Ledgerly opens"
+                        } else {
+                            "Set up a screen lock on your phone to use this"
+                        },
+                        checked = state.appLock,
+                        enabled = canUseAppLock || state.appLock,
+                        onCheckedChange = onAppLockChange,
+                    ),
+                ),
+            )
         }
 
         item("track-head") { GroupTitle("What you track") }

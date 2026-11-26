@@ -41,6 +41,7 @@ data class SettingsUiState(
     /** "Every day at 20:00 if nothing is logged yet" or "Off". */
     val reminderText: String,
     val reminderOptions: List<ReminderOption>,
+    val appLock: Boolean,
 )
 
 class SettingsViewModel(
@@ -85,6 +86,7 @@ class SettingsViewModel(
             reminderMinutes = current.reminderMinutes,
             reminderText = if (current.reminderOn) "Every day at ${reminderTimeLabel(current.reminderMinutes)} if nothing is logged yet" else "Off",
             reminderOptions = optionsWith(current.reminderMinutes),
+            appLock = current.appLock,
         )
     }.stateIn(
         viewModelScope,
@@ -92,6 +94,7 @@ class SettingsViewModel(
         SettingsUiState(
             true, "", "", "", ThemeChoice.System, "", "", "", trackBudgets = true, trackDebts = true,
             reminderOn = false, reminderMinutes = 20 * 60, reminderText = "", reminderOptions = REMINDER_OPTIONS,
+            appLock = false,
         ),
     )
 
@@ -114,6 +117,11 @@ class SettingsViewModel(
     /** Turning this on is only half of it: each app asks for notification permission first. */
     fun onReminderChange(on: Boolean) {
         viewModelScope.launch { settings.update { it.copy(reminderOn = on) } }
+    }
+
+    /** Each app checks Face ID, fingerprint or the passcode before turning this on. */
+    fun onAppLockChange(on: Boolean) {
+        viewModelScope.launch { settings.update { it.copy(appLock = on) } }
     }
 
     fun onReminderTimeChange(minutes: Int) {
