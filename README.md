@@ -37,6 +37,15 @@ xcodegen --spec iosApp/project.yml
 open iosApp/Ledgerly.xcodeproj               # the build phase compiles the Kotlin framework
 ```
 
+**Signing team:** so you don't have to pick your team in Xcode after every `xcodegen` run, put it in a local file once:
+
+```sh
+cp iosApp/Config/Local.xcconfig.example iosApp/Config/Local.xcconfig
+# then set DEVELOPMENT_TEAM in it to your Apple team ID (Xcode > Settings > Accounts)
+```
+
+`Local.xcconfig` is gitignored, so the team ID stays on your Mac. Xcode reads it at build time, so later `xcodegen` runs keep it. If the Signing tab still shows no team, close and reopen the project.
+
 Run `xcodegen` again whenever `iosApp/project.yml` changes after a pull. The Xcode project is not committed, so an old one misses newer build settings: for example, without `-lsqlite3` the link fails with `Undefined symbol: _sqlite3_column_bytes`. The build stops with a reminder when the project is older than `project.yml`.
 
 ## Design tokens
