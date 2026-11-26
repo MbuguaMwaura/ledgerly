@@ -22,6 +22,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import app.ledgerly.shared.presentation.common.period
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -67,7 +70,8 @@ class EditBudgetsViewModel(
 ) : ViewModel() {
     /** The user's currency, kept current by [uiState]. */
     private var currency = CurrencyCode.KES
-    private val month = BudgetMonth.of(clock.today())
+    /** The budget month being edited, kept current by [uiState]. */
+    private var month = BudgetMonth.of(clock.today())
 
     private data class Input(
         /** Edited limits by category id. Categories not in here keep their saved limit. */
@@ -81,13 +85,16 @@ class EditBudgetsViewModel(
     /** The saved limits behind the current state, as typed text. */
     private var saved: Map<String, String> = emptyMap()
 
-    val uiState: StateFlow<EditBudgetsUiState> = combine(
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<EditBudgetsUiState> = settings.period(clock).flatMapLatest { period ->
+      combine(
         categories.observeAll(),
-        budgets.observeMonth(month),
-        transactions.observeBetween(month.firstDay, month.lastDay),
+        budgets.observeMonth(period.month),
+        transactions.observeBetween(period.firstDay, period.lastDay),
         input,
         settings.currency(),
-    ) { all, monthBudgets, entries, current, code ->
+      ) { all, monthBudgets, entries, current, code ->
+        month = period.month
         currency = code
         val zero = Money.zero(currency)
         saved = monthBudgets.filter { it.limit.currency == currency }.associate { it.categoryId to it.limit.toInputText() }
@@ -133,6 +140,7 @@ class EditBudgetsViewModel(
             canSave = changed && !current.isSaving && !current.isSaved,
             isSaved = current.isSaved,
         )
+      }
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),

@@ -15,23 +15,18 @@ struct SpendView: View {
     var body: some View {
         let state = model.state
         let budgets = trackBudgets ? state.budgets : []
-        let today = state.bars.first(where: { $0.isToday })?.date
-        let daysLeft = today.map { Int(state.month.lengthInDays) - Int($0.dayOfMonth) + 1 }
+        let daysLeft: Int? = Int(state.daysLeft)
 
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Card {
-                        Text("Spent in \(monthName(Int(state.month.month)))").ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
+                        Text(state.title).ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
                         AmountText(money: state.spentThisMonth, style: LedgerlyText.amountHero).padding(.top, 6)
-                        if let today, !state.spentThisMonth.isZero {
-                            let pace = Money(
-                                minorUnits: state.spentThisMonth.minorUnits / Int64(today.dayOfMonth) * Int64(state.month.lengthInDays),
-                                currency: state.spentThisMonth.currency
-                            )
+                        if let pace = state.pace {
                             (Text("On pace for ").foregroundStyle(LedgerlyColor.inkMuted)
                                 + Text(pace.label()).foregroundStyle(LedgerlyColor.ink).fontWeight(.semibold)
-                                + Text(" by \(state.month.lastDay.short)").foregroundStyle(LedgerlyColor.inkMuted))
+                                + Text(" by \(state.endLabel)").foregroundStyle(LedgerlyColor.inkMuted))
                                 .ledgerlyText(LedgerlyText.label)
                                 .padding(.top, 6)
                         }

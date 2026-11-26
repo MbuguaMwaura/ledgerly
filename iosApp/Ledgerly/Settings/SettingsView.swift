@@ -46,7 +46,7 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                     }
 
-                    Section("Money") {
+                    Section {
                         if state.trackBudgets {
                             Button(action: onEditBudgets) {
                                 LabeledContent {
@@ -57,12 +57,24 @@ struct SettingsView: View {
                                 }
                             }
                         }
+                        Picker(selection: Binding(get: { state.monthStartDay }, set: { viewModel.onMonthStartDayChange(day: $0) })) {
+                            ForEach(state.monthStartOptions, id: \.day) { option in
+                                Text(option.day == 1 ? "\(option.label) (calendar month)" : option.label).tag(option.day)
+                            }
+                        } label: {
+                            Text("Budget month starts on")
+                            Text(state.monthStartText)
+                        }
                         LabeledContent {
                             Text(state.currencyText)
                         } label: {
                             Text("Currency")
                             Text("Chosen when you started")
                         }
+                    } header: {
+                        Text("Money")
+                    } footer: {
+                        Text("Set the start to your payday so each budget month runs from one payday to the next.")
                     }
 
                     Section {

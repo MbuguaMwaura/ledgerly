@@ -10,6 +10,7 @@ import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
 import app.ledgerly.shared.domain.model.DebtPayment
 import app.ledgerly.shared.domain.model.EntryKind
+import app.ledgerly.shared.domain.model.MONTH_START_DAYS
 import app.ledgerly.shared.domain.model.ThemeChoice
 import app.ledgerly.shared.domain.model.Transaction
 import app.ledgerly.shared.domain.model.UserSettings
@@ -184,6 +185,7 @@ class LocalSettingsRepository(
             trackDebts = this[TRACK_DEBTS]?.toBooleanStrictOrNull() ?: defaults.trackDebts,
             reminderOn = this[REMINDER_ON]?.toBooleanStrictOrNull() ?: defaults.reminderOn,
             appLock = this[APP_LOCK]?.toBooleanStrictOrNull() ?: defaults.appLock,
+            monthStartDay = this[MONTH_START_DAY]?.toIntOrNull()?.takeIf { it in MONTH_START_DAYS } ?: defaults.monthStartDay,
             hideAmounts = this[HIDE_AMOUNTS]?.toBooleanStrictOrNull() ?: defaults.hideAmounts,
             reminderMinutes = this[REMINDER_MINUTES]?.toIntOrNull()?.takeIf { it in 0 until 24 * 60 } ?: defaults.reminderMinutes,
             startedOn = this[STARTED_ON]?.takeIf { it.isNotEmpty() }?.let(LocalDate::parse),
@@ -199,6 +201,7 @@ class LocalSettingsRepository(
         REMINDER_ON to reminderOn.toString(),
         REMINDER_MINUTES to reminderMinutes.toString(),
         APP_LOCK to appLock.toString(),
+        MONTH_START_DAY to monthStartDay.toString(),
         HIDE_AMOUNTS to hideAmounts.toString(),
         STARTED_ON to (startedOn?.toString() ?: ""),
     )
@@ -212,6 +215,7 @@ class LocalSettingsRepository(
         const val REMINDER_ON = "reminder_on"
         const val REMINDER_MINUTES = "reminder_minutes"
         const val APP_LOCK = "app_lock"
+        const val MONTH_START_DAY = "month_start_day"
         const val HIDE_AMOUNTS = "hide_amounts"
         const val STARTED_ON = "started_on"
     }

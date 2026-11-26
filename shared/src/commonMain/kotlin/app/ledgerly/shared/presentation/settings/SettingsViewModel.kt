@@ -18,6 +18,16 @@ import app.ledgerly.shared.presentation.onboarding.CURRENCIES
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import app.ledgerly.shared.presentation.common.period
+import app.ledgerly.shared.presentation.common.periodLabel
+import app.ledgerly.shared.presentation.common.ordinal
+import app.ledgerly.shared.domain.model.Budget
+import app.ledgerly.shared.domain.model.BudgetPeriod
+import app.ledgerly.shared.domain.model.MONTH_START_DAYS
+import app.ledgerly.shared.domain.model.UserSettings
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -44,7 +54,17 @@ data class SettingsUiState(
     val reminderOptions: List<ReminderOption>,
     val appLock: Boolean,
     val hideAmounts: Boolean,
+    /** 1 to 28. */
+    val monthStartDay: Int,
+    /** "1st, a calendar month" or "25th, so this month is 25 Oct – 24 Nov". */
+    val monthStartText: String,
+    /** Every day a budget month can start on, with its label: "1st", "2nd"... */
+    val monthStartOptions: List<MonthStartOption>,
 )
+
+data class MonthStartOption(val day: Int, val label: String)
+
+private val MONTH_START_OPTIONS = MONTH_START_DAYS.map { MonthStartOption(it, ordinal(it)) }
 
 class SettingsViewModel(
     private val settings: SettingsRepository,
@@ -52,13 +72,26 @@ class SettingsViewModel(
     logs: LogRepository,
     private val clock: AppClock,
 ) : ViewModel() {
-    private val month = BudgetMonth.of(clock.today())
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<SettingsUiState> = settings.period(clock).flatMapLatest { period ->
+        combine(
+            settings.observe(),
+            budgets.observeMonth(period.month),
+            logs.observeLoggedDays(),
+        ) { current, monthBudgets, logged -> state(period, current, monthBudgets, logged) }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        SettingsUiState(
+            true, "", "", "", ThemeChoice.System, "", "", "", trackBudgets = true, trackDebts = true,
+            reminderOn = false, reminderMinutes = 20 * 60, reminderText = "", reminderOptions = REMINDER_OPTIONS,
+            appLock = false,
+            hideAmounts = false,
+            monthStartDay = 1, monthStartText = "", monthStartOptions = MONTH_START_OPTIONS,
+        ),
+    )
 
-    val uiState: StateFlow<SettingsUiState> = combine(
-        settings.observe(),
-        budgets.observeMonth(month),
-        logs.observeLoggedDays(),
-    ) { current, monthBudgets, logged ->
+    private fun state(period: BudgetPeriod, current: UserSettings, monthBudgets: List<Budget>, logged: Set<LocalDate>): SettingsUiState {
         val streak = calculateStreak(logged, clock.today())
         val limits = monthBudgets.filter { it.limit.currency == current.currency }
         val total = limits.fold(Money.zero(current.currency)) { s, b -> s + b.limit }
@@ -68,7 +101,7 @@ class SettingsViewModel(
             0 -> null
             else -> "${streak.current}-day streak"
         }
-        SettingsUiState(
+        return SettingsUiState(
             isLoading = false,
             name = current.name,
             initials = current.name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.take(2)
@@ -91,17 +124,17 @@ class SettingsViewModel(
             reminderOptions = optionsWith(current.reminderMinutes),
             appLock = current.appLock,
             hideAmounts = current.hideAmounts,
+            monthStartDay = current.monthStartDay,
+            monthStartText = if (current.monthStartDay == 1) "1st, a calendar month"
+            else "${ordinal(current.monthStartDay)}, so this month is ${periodLabel(period)}",
+            monthStartOptions = MONTH_START_OPTIONS,
         )
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5_000),
-        SettingsUiState(
-            true, "", "", "", ThemeChoice.System, "", "", "", trackBudgets = true, trackDebts = true,
-            reminderOn = false, reminderMinutes = 20 * 60, reminderText = "", reminderOptions = REMINDER_OPTIONS,
-            appLock = false,
-            hideAmounts = false,
-        ),
-    )
+    }
+
+    fun onMonthStartDayChange(day: Int) {
+        if (day !in MONTH_START_DAYS) return
+        viewModelScope.launch { settings.update { it.copy(monthStartDay = day) } }
+    }
 
     fun onNameChange(name: String) {
         viewModelScope.launch { settings.update { it.copy(name = name.trim().take(MAX_NAME_LENGTH)) } }

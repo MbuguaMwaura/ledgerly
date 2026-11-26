@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import app.ledgerly.shared.domain.repository.SettingsRepository
 import app.ledgerly.shared.domain.model.BudgetMonth
+import app.ledgerly.shared.domain.model.BudgetPeriod
 import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
 import app.ledgerly.shared.domain.model.EntryKind
@@ -32,6 +33,8 @@ import kotlinx.datetime.LocalDate
 
 data class HomeSummary(
     val month: BudgetMonth,
+    /** The budget month's days: the calendar month, or payday to payday. */
+    val period: BudgetPeriod,
     val leftToSpend: LeftToSpend,
     val income: Money,
     val budgets: List<BudgetStatus>,
@@ -59,14 +62,15 @@ class ObserveHomeSummary(
     private val clock: AppClock,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
-    operator fun invoke(): Flow<HomeSummary> = settings.observe().map { it.currency }.distinctUntilChanged()
-        .flatMapLatest { currency -> summary(currency) }
+    operator fun invoke(): Flow<HomeSummary> = settings.observe().map { it.currency to it.monthStartDay }.distinctUntilChanged()
+        .flatMapLatest { (currency, startDay) -> summary(currency, startDay) }
 
-    private fun summary(currency: CurrencyCode): Flow<HomeSummary> {
+    private fun summary(currency: CurrencyCode, startDay: Int): Flow<HomeSummary> {
         val today = clock.today()
-        val month = BudgetMonth.of(today)
+        val period = BudgetPeriod.of(today, startDay)
+        val month = period.month
         return combine(
-            transactions.observeBetween(month.firstDay, month.lastDay),
+            transactions.observeBetween(period.firstDay, period.lastDay),
             budgets.observeMonth(month),
             logs.observeLoggedDays(),
             debts.observeAll(),
@@ -87,7 +91,8 @@ class ObserveHomeSummary(
 
             HomeSummary(
                 month = month,
-                leftToSpend = leftToSpend(totalLimit, totalSpent, month, today),
+                period = period,
+                leftToSpend = leftToSpend(totalLimit, totalSpent, period, today),
                 income = income,
                 budgets = statuses,
                 needsALook = budgetsNeedingALook(statuses),

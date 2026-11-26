@@ -2,6 +2,7 @@ package app.ledgerly.shared.domain
 
 import app.ledgerly.shared.domain.model.Budget
 import app.ledgerly.shared.domain.model.BudgetMonth
+import app.ledgerly.shared.domain.model.BudgetPeriod
 import app.ledgerly.shared.domain.rules.BudgetTone
 import app.ledgerly.shared.domain.rules.budgetStatus
 import app.ledgerly.shared.domain.rules.budgetsNeedingALook
@@ -43,7 +44,7 @@ class BudgetRulesTest {
 
     @Test
     fun leftToSpendPerDayCountsToday() {
-        val result = leftToSpend(kes(30_000), kes(11_550), month, today = LocalDate(2026, 11, 25))
+        val result = leftToSpend(kes(30_000), kes(11_550), BudgetPeriod(month), today = LocalDate(2026, 11, 25))
         assertEquals(kes(18_450), result.left)
         assertEquals(6, result.daysLeft)
         assertEquals(kes(3_075), result.perDay)
@@ -51,7 +52,7 @@ class BudgetRulesTest {
 
     @Test
     fun overspentMonthHasNothingPerDay() {
-        val result = leftToSpend(kes(10_000), kes(12_000), month, today = LocalDate(2026, 11, 25))
+        val result = leftToSpend(kes(10_000), kes(12_000), BudgetPeriod(month), today = LocalDate(2026, 11, 25))
         assertEquals(kes(-2_000), result.left)
         assertEquals(kes(0), result.perDay)
     }

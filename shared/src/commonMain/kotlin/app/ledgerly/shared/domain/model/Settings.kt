@@ -25,6 +25,8 @@ data class UserSettings(
     val appLock: Boolean = false,
     /** Show "KES ••••" instead of figures, for using the app where others can see the screen. */
     val hideAmounts: Boolean = false,
+    /** The day each budget month starts, 1 to 28. Set it to payday so a month runs payday to payday. */
+    val monthStartDay: Int = 1,
     /** The day onboarding finished, or null while it hasn't. */
     val startedOn: LocalDate? = null,
 ) {

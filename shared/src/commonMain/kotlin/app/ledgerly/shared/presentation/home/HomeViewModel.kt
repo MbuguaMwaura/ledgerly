@@ -13,6 +13,7 @@ import app.ledgerly.shared.money.Money
 import app.ledgerly.shared.presentation.common.BudgetRowState
 import app.ledgerly.shared.presentation.common.DebtRowState
 import app.ledgerly.shared.presentation.common.EntryRowState
+import app.ledgerly.shared.presentation.common.periodLabel
 import app.ledgerly.shared.presentation.common.toRow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,8 @@ data class HomeUiState(
     /** "KES 3,075 a day for the last 6 days." */
     val perDay: Money,
     val daysLeft: Int,
+    /** "November", or "25 Oct – 24 Nov" when months start on payday. */
+    val periodLabel: String,
     val spent: Money,
     val income: Money,
     val totalBudget: Money,
@@ -60,7 +63,7 @@ data class HomeUiState(
         fun loading(currency: CurrencyCode = CurrencyCode.KES): HomeUiState {
             val zero = Money.zero(currency)
             return HomeUiState(
-                isLoading = true, leftToSpend = zero, perDay = zero, daysLeft = 0, spent = zero, income = zero,
+                isLoading = true, leftToSpend = zero, perDay = zero, daysLeft = 0, periodLabel = "", spent = zero, income = zero,
                 totalBudget = zero, budgetPercentUsed = 0, needsALook = emptyList(),
                 streak = StreakState(0, 0, loggedToday = false, freezesHeld = 0, frozenDays = emptyList(), milestoneToday = null),
                 week = emptyList(), nextMilestone = STREAK_MILESTONES.first(), recent = emptyList(),
@@ -85,6 +88,7 @@ class HomeViewModel(
             leftToSpend = left.left,
             perDay = left.perDay,
             daysLeft = left.daysLeft,
+            periodLabel = periodLabel(summary.period),
             spent = left.spent,
             income = summary.income,
             totalBudget = left.totalLimit,

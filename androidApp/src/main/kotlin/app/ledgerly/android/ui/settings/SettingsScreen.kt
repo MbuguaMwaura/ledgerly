@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -59,6 +63,7 @@ fun SettingsRoute(
         state = state,
         canUseAppLock = rememberCanUseAppLock(),
         onHideAmountsChange = viewModel::onHideAmountsChange,
+        onMonthStartDayChange = viewModel::onMonthStartDayChange,
         onAppLockChange = { on ->
             if (on) authenticate("Turn on app lock") { ok -> if (ok) viewModel.onAppLockChange(true) }
             else viewModel.onAppLockChange(false)
@@ -94,6 +99,7 @@ fun SettingsScreen(
     canUseAppLock: Boolean,
     onAppLockChange: (Boolean) -> Unit,
     onHideAmountsChange: (Boolean) -> Unit,
+    onMonthStartDayChange: (Int) -> Unit,
     versionName: String,
     onNameChange: (String) -> Unit,
     onThemeChange: (ThemeChoice) -> Unit,
@@ -146,11 +152,50 @@ fun SettingsScreen(
 
         item("money-head") { GroupTitle("Money") }
         item("money") {
-            SettingRows(
-                buildList {
-                    if (state.trackBudgets) add(SettingItem("budgets", "Budgets", sub = state.budgetsText, onClick = onEditBudgets))
-                    add(SettingItem("currency", "Currency", sub = "Chosen when you started", value = state.currencyText))
-                },
+            var pickingStart by rememberSaveable { mutableStateOf(false) }
+            Box {
+                SettingRows(
+                    buildList {
+                        if (state.trackBudgets) add(SettingItem("budgets", "Budgets", sub = state.budgetsText, onClick = onEditBudgets))
+                        add(
+                            SettingItem(
+                                "month-start",
+                                "Budget month starts on",
+                                sub = state.monthStartText,
+                                onClick = { pickingStart = true },
+                            ),
+                        )
+                        add(SettingItem("currency", "Currency", sub = "Chosen when you started", value = state.currencyText))
+                    },
+                )
+                DropdownMenu(
+                    expanded = pickingStart,
+                    onDismissRequest = { pickingStart = false },
+                    modifier = Modifier.heightIn(max = 320.dp),
+                ) {
+                    state.monthStartOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(if (option.day == 1) "${option.label} (calendar month)" else option.label) },
+                            onClick = {
+                                pickingStart = false
+                                onMonthStartDayChange(option.day)
+                            },
+                            trailingIcon = if (option.day == state.monthStartDay) {
+                                { Text("✓", color = colors.cobalt) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        item("month-start-note") {
+            Text(
+                "Set it to your payday so each budget month runs from one payday to the next.",
+                style = LedgerlyTextStyles.caption,
+                color = colors.inkMuted,
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp),
             )
         }
 
