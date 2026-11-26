@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class AppUiState(
     val isLoading: Boolean,
@@ -36,6 +37,8 @@ data class AppUiState(
     val appLock: Boolean,
     /** Show the lock screen instead of the app until the user unlocks. */
     val isLocked: Boolean,
+    /** Every amount shows as "KES ••••" while this is on. */
+    val hideAmounts: Boolean,
 )
 
 /**
@@ -43,7 +46,7 @@ data class AppUiState(
  * daily reminders to schedule, and whether the app is locked.
  */
 class AppViewModel(
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
     logs: LogRepository,
     clock: AppClock,
 ) : ViewModel() {
@@ -76,6 +79,7 @@ class AppViewModel(
             reminderMessage = REMINDER_MESSAGE,
             appLock = current.appLock,
             isLocked = current.appLock && current.isOnboarded && isLocked,
+            hideAmounts = current.hideAmounts,
         )
     }.stateIn(
         viewModelScope,
@@ -83,13 +87,18 @@ class AppViewModel(
         AppUiState(
             isLoading = true, isOnboarded = false, theme = ThemeChoice.System, trackBudgets = true, trackDebts = true,
             firstName = "", reminderTimes = emptyList(), reminderMessage = REMINDER_MESSAGE,
-            appLock = false, isLocked = false,
+            appLock = false, isLocked = false, hideAmounts = false,
         ),
     )
 
     /** The app left the screen (not just a rotation or a system dialog). Locks it if app lock is on. */
     fun onAppHidden() {
         if (uiState.value.appLock) locked.value = true
+    }
+
+    /** The quick toggle on Home. The same setting as the switch in Settings. */
+    fun onHideAmountsChange(hidden: Boolean) {
+        viewModelScope.launch { settings.update { it.copy(hideAmounts = hidden) } }
     }
 
     /** The user passed Face ID, fingerprint or the passcode. */

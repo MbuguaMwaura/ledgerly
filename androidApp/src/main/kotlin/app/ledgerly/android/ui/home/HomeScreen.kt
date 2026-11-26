@@ -68,6 +68,8 @@ fun HomeRoute(
     onOpenEntry: (String) -> Unit,
     onEditBudgets: () -> Unit,
     onOpenSettings: () -> Unit,
+    amountsHidden: Boolean,
+    onToggleAmounts: () -> Unit,
     firstName: String,
     trackBudgets: Boolean,
     trackDebts: Boolean,
@@ -84,6 +86,8 @@ fun HomeRoute(
         onOpenEntry = onOpenEntry,
         onEditBudgets = onEditBudgets,
         onOpenSettings = onOpenSettings,
+        amountsHidden = amountsHidden,
+        onToggleAmounts = onToggleAmounts,
         firstName = firstName,
         trackBudgets = trackBudgets,
         trackDebts = trackDebts,
@@ -101,6 +105,8 @@ fun HomeScreen(
     onOpenEntry: (String) -> Unit,
     onEditBudgets: () -> Unit,
     onOpenSettings: () -> Unit,
+    amountsHidden: Boolean,
+    onToggleAmounts: () -> Unit,
     firstName: String,
     trackBudgets: Boolean,
     trackDebts: Boolean,
@@ -122,7 +128,12 @@ fun HomeScreen(
                         modifier = Modifier.semantics { heading() },
                     )
                 }
-                RoundIconButton(onOpenSettings, "Settings", size = 44.dp) { LedgerlyIcon(LedgerlyIcons.Sliders, size = 20.dp) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RoundIconButton(onToggleAmounts, if (amountsHidden) "Show amounts" else "Hide amounts", size = 44.dp) {
+                        LedgerlyIcon(if (amountsHidden) LedgerlyIcons.EyeOff else LedgerlyIcons.Eye, size = 20.dp)
+                    }
+                    RoundIconButton(onOpenSettings, "Settings", size = 44.dp) { LedgerlyIcon(LedgerlyIcons.Sliders, size = 20.dp) }
+                }
             }
         }
 

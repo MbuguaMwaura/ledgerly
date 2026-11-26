@@ -23,6 +23,8 @@ data class UserSettings(
     val reminderMinutes: Int = 20 * 60,
     /** Ask for Face ID, fingerprint or the phone's passcode whenever Ledgerly opens. */
     val appLock: Boolean = false,
+    /** Show "KES ••••" instead of figures, for using the app where others can see the screen. */
+    val hideAmounts: Boolean = false,
     /** The day onboarding finished, or null while it hasn't. */
     val startedOn: LocalDate? = null,
 ) {

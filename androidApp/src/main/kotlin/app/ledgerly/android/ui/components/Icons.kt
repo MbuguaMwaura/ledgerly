@@ -25,6 +25,8 @@ object LedgerlyIcons {
     val Trash = icon("Trash", "M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3")
     val Check = icon("Check", "M5 12.5l4.5 4.5L19 7.5")
     val Flame = icon("Flame", "M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.8 1.2 2.8 2.3 3.2C10.8 9 11.5 6 12 3z")
+    val Eye = icon("Eye", "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z")
+    val EyeOff = icon("EyeOff", "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM4 4l16 16")
     val Lock = icon("Lock", "M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zM8 11V8a4 4 0 0 1 8 0v3")
     val Bell = icon("Bell", "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0")
     val Snow = icon("Snow", "M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9")

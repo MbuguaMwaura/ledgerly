@@ -9,7 +9,7 @@ struct AmountText: View {
     var showFraction = true
 
     var body: some View {
-        let parts = money.parts()
+        let parts = money.shownParts()
         let faint = style.size >= 24 ? LedgerlyColor.inkFaint : LedgerlyColor.ink
         let sign = parts.sign == .negative ? "− " : ""
         let fraction = showFraction && !parts.fraction.isEmpty ? ".\(parts.fraction)" : ""
@@ -20,6 +20,6 @@ struct AmountText: View {
             + Text(fraction).foregroundStyle(faint))
             .ledgerlyText(style)
             .monospacedDigit()
-            .accessibilityLabel(parts.format(withFraction: showFraction))
+            .accessibilityLabel(AmountPrivacy.shared.hidden ? "\(parts.currencyCode) amount hidden" : parts.format(withFraction: showFraction))
     }
 }

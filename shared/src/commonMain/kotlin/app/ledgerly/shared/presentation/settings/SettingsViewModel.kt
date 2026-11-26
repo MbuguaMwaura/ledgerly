@@ -13,6 +13,7 @@ import app.ledgerly.shared.domain.repository.SettingsRepository
 import app.ledgerly.shared.domain.rules.calculateStreak
 import app.ledgerly.shared.domain.time.AppClock
 import app.ledgerly.shared.money.Money
+import app.ledgerly.shared.money.hidden
 import app.ledgerly.shared.presentation.onboarding.CURRENCIES
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,7 @@ data class SettingsUiState(
     val reminderText: String,
     val reminderOptions: List<ReminderOption>,
     val appLock: Boolean,
+    val hideAmounts: Boolean,
 )
 
 class SettingsViewModel(
@@ -60,6 +62,7 @@ class SettingsViewModel(
         val streak = calculateStreak(logged, clock.today())
         val limits = monthBudgets.filter { it.limit.currency == current.currency }
         val total = limits.fold(Money.zero(current.currency)) { s, b -> s + b.limit }
+        val totalText = total.parts().let { if (current.hideAmounts) it.hidden() else it }.format(withFraction = false)
         val since = current.startedOn?.let { "Logging since ${MONTHS[it.monthNumber - 1]} ${it.year}" }
         val streakText = when (streak.current) {
             0 -> null
@@ -76,8 +79,8 @@ class SettingsViewModel(
                 ?.let { "${it.label} (${it.code.code})" } ?: current.currency.code,
             budgetsText = when (limits.size) {
                 0 -> "Not set"
-                1 -> "${total.parts().format(withFraction = false)} a month in 1 category"
-                else -> "${total.parts().format(withFraction = false)} a month across ${limits.size} categories"
+                1 -> "$totalText a month in 1 category"
+                else -> "$totalText a month across ${limits.size} categories"
             },
             freezesText = if (streak.freezesHeld == 0) "None left" else "${streak.freezesHeld} left",
             trackBudgets = current.trackBudgets,
@@ -87,6 +90,7 @@ class SettingsViewModel(
             reminderText = if (current.reminderOn) "Every day at ${reminderTimeLabel(current.reminderMinutes)} if nothing is logged yet" else "Off",
             reminderOptions = optionsWith(current.reminderMinutes),
             appLock = current.appLock,
+            hideAmounts = current.hideAmounts,
         )
     }.stateIn(
         viewModelScope,
@@ -95,6 +99,7 @@ class SettingsViewModel(
             true, "", "", "", ThemeChoice.System, "", "", "", trackBudgets = true, trackDebts = true,
             reminderOn = false, reminderMinutes = 20 * 60, reminderText = "", reminderOptions = REMINDER_OPTIONS,
             appLock = false,
+            hideAmounts = false,
         ),
     )
 
@@ -117,6 +122,10 @@ class SettingsViewModel(
     /** Turning this on is only half of it: each app asks for notification permission first. */
     fun onReminderChange(on: Boolean) {
         viewModelScope.launch { settings.update { it.copy(reminderOn = on) } }
+    }
+
+    fun onHideAmountsChange(hidden: Boolean) {
+        viewModelScope.launch { settings.update { it.copy(hideAmounts = hidden) } }
     }
 
     /** Each app checks Face ID, fingerprint or the passcode before turning this on. */

@@ -98,6 +98,10 @@ struct SettingsView: View {
                             Text(canLock ? "Ask for \(AppLock.methodName) when Ledgerly opens" : "Set up a passcode on your iPhone to use this")
                         }
                         .disabled(!canLock)
+                        Toggle(isOn: Binding(get: { state.hideAmounts }, set: { viewModel.onHideAmountsChange(hidden: $0) })) {
+                            Text("Hide amounts")
+                            Text("Show •••• instead of figures. The eye on Home does the same.")
+                        }
                     }
 
                     Section {

@@ -14,7 +14,7 @@ import app.ledgerly.shared.money.Money
 import app.ledgerly.shared.money.Sign
 
 /**
- * A money figure: the whole number in `ink`, the currency code and cents in `ink-faint`.
+ * A money figure, or "KES ••••" while amounts are hidden: the whole number in `ink`, the currency code and cents in `ink-faint`.
  * The design system allows the faint parts only at 24sp and up, so smaller styles keep everything in `ink`.
  */
 @Composable
@@ -25,7 +25,7 @@ fun Amount(
     showFraction: Boolean = true,
 ) {
     val colors = LedgerlyTheme.colors
-    val parts = money.parts()
+    val parts = money.shownParts()
     val faint = if (style.fontSize.value >= 24f) colors.inkFaint else colors.ink
     val text = buildAnnotatedString {
         if (parts.sign == Sign.Negative) withStyle(SpanStyle(color = colors.ink)) { append("− ") }
@@ -38,6 +38,8 @@ fun Amount(
     Text(
         text = text,
         style = style,
-        modifier = modifier.semantics { contentDescription = parts.format(withFraction = showFraction) },
+        modifier = modifier.semantics {
+            contentDescription = if (AmountPrivacy.hidden) "${parts.currencyCode} amount hidden" else parts.format(withFraction = showFraction)
+        },
     )
 }

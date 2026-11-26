@@ -46,4 +46,11 @@ class MoneyTest {
     fun refusesToMixCurrencies() {
         assertFailsWith<IllegalArgumentException> { Money(1, CurrencyCode.KES) + Money(1, CurrencyCode.USD) }
     }
+
+    @Test
+    fun hiddenKeepsSignAndCurrency() {
+        val parts = Money.ofMajor(-1_250, CurrencyCode.KES).parts().hidden()
+        assertEquals("KES ••••", parts.format(withFraction = true))
+        assertEquals(Sign.Negative, parts.sign)
+    }
 }

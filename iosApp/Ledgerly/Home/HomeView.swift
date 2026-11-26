@@ -9,6 +9,8 @@ struct HomeView: View {
     let onOpenEntry: (String) -> Void
     let onEditBudgets: () -> Void
     let onOpenSettings: () -> Void
+    let amountsHidden: Bool
+    let onToggleAmounts: () -> Void
     let firstName: String
     let trackBudgets: Bool
     let trackDebts: Bool
@@ -117,6 +119,16 @@ struct HomeView: View {
                     .accessibilityAddTraits(.isHeader)
             }
             Spacer(minLength: 8)
+            Button(action: onToggleAmounts) {
+                Image(systemName: amountsHidden ? "eye.slash" : "eye")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(LedgerlyColor.ink)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassControl(in: Circle())
+            .accessibilityLabel(amountsHidden ? "Show amounts" : "Hide amounts")
             Button(action: onOpenSettings) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 17, weight: .medium))

@@ -87,6 +87,12 @@ data class MoneyParts(
     }
 }
 
+/** What stands in for the digits while amounts are hidden. */
+const val HIDDEN_DIGITS = "••••"
+
+/** The same figure with its digits hidden: `KES ••••`. The sign and currency stay. */
+fun MoneyParts.hidden(): MoneyParts = copy(whole = HIDDEN_DIGITS, fraction = "")
+
 private fun pow10(exponent: Int): Long {
     var result = 1L
     repeat(exponent) { result *= 10 }

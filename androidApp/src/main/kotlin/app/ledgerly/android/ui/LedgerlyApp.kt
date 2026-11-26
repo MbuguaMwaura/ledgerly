@@ -14,7 +14,9 @@ import app.ledgerly.android.lock.rememberAuthenticator
 import app.ledgerly.android.reminders.ReminderSync
 import app.ledgerly.android.ui.lock.LockScreen
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import app.ledgerly.android.ui.components.AmountPrivacy
 import app.ledgerly.android.ui.components.ScopedViewModels
+import androidx.compose.runtime.SideEffect
 import app.ledgerly.android.ui.onboarding.OnboardingRoute
 import app.ledgerly.android.ui.theme.LedgerlyTheme
 import app.ledgerly.shared.domain.model.ThemeChoice
@@ -35,6 +37,7 @@ fun LedgerlyApp(versionName: String, viewModel: AppViewModel = koinViewModel()) 
     }
     if (!app.isLoading) ReminderSync(app.reminderTimes, app.reminderMessage)
     AppLockEffects(app.appLock, viewModel::onAppHidden)
+    SideEffect { AmountPrivacy.hidden = app.hideAmounts }
     val authenticate = rememberAuthenticator()
     val unlock = { authenticate("Unlock Ledgerly") { ok -> if (ok) viewModel.onUnlocked() } }
     PromptWhenLocked(app.isLocked, unlock)
@@ -46,7 +49,11 @@ fun LedgerlyApp(versionName: String, viewModel: AppViewModel = koinViewModel()) 
                 // Kept underneath while locked so the user comes back to where they were, but
                 // hidden from screen readers.
                 Box(if (app.isLocked) Modifier.clearAndSetSemantics {} else Modifier) {
-                    LedgerlyRoot(app = app, versionName = versionName)
+                    LedgerlyRoot(
+                        app = app,
+                        versionName = versionName,
+                        onToggleAmounts = { viewModel.onHideAmountsChange(!app.hideAmounts) },
+                    )
                 }
                 if (app.isLocked) {
                     LockScreen(onUnlock = unlock)

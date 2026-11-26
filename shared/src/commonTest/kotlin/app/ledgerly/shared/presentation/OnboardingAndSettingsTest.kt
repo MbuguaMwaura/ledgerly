@@ -97,6 +97,15 @@ class OnboardingAndSettingsTest : ViewModelTest() {
     }
 
     @Test
+    fun homeTogglesHiddenAmounts() = test {
+        val app = AppViewModel(settings, logs, clock)
+        assertFalse(app.uiState.first { !it.isLoading }.hideAmounts)
+        app.onHideAmountsChange(true)
+        assertTrue(app.uiState.first { it.hideAmounts }.hideAmounts)
+        assertTrue(settings.observe().first().hideAmounts)
+    }
+
+    @Test
     fun loggingTodayDropsTodaysReminder() = test {
         settings.update { it.copy(name = "Otieno", startedOn = LocalDate(2026, 11, 20), reminderOn = true) }
         val app = AppViewModel(settings, logs, clock)
@@ -147,6 +156,9 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             assertFalse(changed.appLock)
             vm.onAppLockChange(true)
             assertTrue(awaitState { it.appLock }.appLock)
+
+            vm.onHideAmountsChange(true)
+            assertEquals("KES •••• a month across 2 categories", awaitState { it.hideAmounts }.budgetsText)
 
             vm.onReminderChange(true)
             vm.onReminderTimeChange(19 * 60 + 30)

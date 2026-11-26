@@ -105,7 +105,7 @@ fun BudgetRow(row: BudgetRowState, daysLeft: Int?, modifier: Modifier = Modifier
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(row.categoryName, style = LedgerlyTextStyles.body, color = colors.ink)
                 Text(
-                    "${row.spent.label()} / ${row.limit.parts().whole}",
+                    "${row.spent.label()} / ${row.limit.shownParts().whole}",
                     style = LedgerlyTextStyles.label,
                     color = colors.ink,
                 )

@@ -1,10 +1,25 @@
 import Foundation
+import Observation
 import Shared
 
+/// Whether amounts show as "KES ••••". AppShell keeps it in step with the setting; every
+/// `AmountText` and `label()` reads it, so views redraw when it changes.
+@Observable
+final class AmountPrivacy {
+    static let shared = AmountPrivacy()
+    var hidden = false
+}
+
 extension Money {
-    /// "KES 1,250". With `signed`, entries read "− KES 650" and "+ KES 4,000".
-    func label(signed: Bool = false, fraction: Bool = false) -> String {
+    /// The figure's parts, with the digits hidden while amounts are hidden.
+    func shownParts() -> MoneyParts {
         let parts = parts()
+        return AmountPrivacy.shared.hidden ? parts.hidden() : parts
+    }
+
+    /// "KES 1,250". With `signed`, entries read "− KES 650" and "+ KES 4,000". "KES ••••" while amounts are hidden.
+    func label(signed: Bool = false, fraction: Bool = false) -> String {
+        let parts = shownParts()
         let text = parts.format(withFraction: fraction)
         switch parts.sign {
         case .negative: return "− " + text
