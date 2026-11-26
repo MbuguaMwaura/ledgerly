@@ -14,7 +14,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TransactionDetailViewModelTest : ViewModelTest() {
-    private fun viewModel() = TransactionDetailViewModel(transactions, categories, budgets, clock)
+    private fun viewModel() = TransactionDetailViewModel(transactions, categories, budgets, settings, clock)
 
     @Test
     fun showsTheEntryAndHowItFits() = test {

@@ -7,6 +7,7 @@ import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtPayment
 import app.ledgerly.shared.domain.model.Transaction
 import app.ledgerly.shared.domain.model.UserSettings
+import app.ledgerly.shared.money.CurrencyCode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -72,4 +73,11 @@ interface SettingsRepository {
 
     /** Applies [change] to the current settings and saves the result. */
     suspend fun update(change: (UserSettings) -> UserSettings)
+
+    /**
+     * Switches the user's currency to [to] and rewrites every amount logged in the old one
+     * (entries, budgets, debts and payments) at [rate] units of [to] per unit of the old
+     * currency, all at once.
+     */
+    suspend fun changeCurrency(to: CurrencyCode, rate: Double, at: Instant)
 }

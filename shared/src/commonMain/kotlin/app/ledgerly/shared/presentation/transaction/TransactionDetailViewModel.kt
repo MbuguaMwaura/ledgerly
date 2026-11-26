@@ -3,7 +3,10 @@ package app.ledgerly.shared.presentation.transaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.Budget
-import app.ledgerly.shared.domain.model.BudgetMonth
+import app.ledgerly.shared.domain.model.BudgetPeriod
+import app.ledgerly.shared.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import app.ledgerly.shared.domain.model.Category
 import app.ledgerly.shared.domain.model.EntryKind
 import app.ledgerly.shared.domain.model.Transaction
@@ -68,6 +71,7 @@ class TransactionDetailViewModel(
     private val transactions: TransactionRepository,
     private val categories: CategoryRepository,
     private val budgets: BudgetRepository,
+    private val settings: SettingsRepository,
     private val clock: AppClock,
 ) : ViewModel() {
     private data class Draft(
@@ -138,15 +142,19 @@ class TransactionDetailViewModel(
     }
 
     /**
-     * Follows the entry's month, so the state stays current after a save. Falls back to the
-     * entry as first loaded if it leaves the month's list (it was deleted).
+     * Follows the entry's budget month, so the state stays current after a save. Falls back to
+     * the entry as first loaded if it leaves the month's list (it was deleted).
      */
-    private fun observe(found: Transaction): Flow<TransactionDetailUiState> {
-        val month = BudgetMonth.of(found.logicalDate)
+    private fun observe(found: Transaction): Flow<TransactionDetailUiState> =
+        settings.observe().map { it.monthStartDay }.distinctUntilChanged().flatMapLatest { startDay ->
+            observe(found, BudgetPeriod.of(found.logicalDate, startDay))
+        }
+
+    private fun observe(found: Transaction, period: BudgetPeriod): Flow<TransactionDetailUiState> {
         return combine(
-            transactions.observeBetween(month.firstDay, month.lastDay),
+            transactions.observeBetween(period.firstDay, period.lastDay),
             categories.observeAll(),
-            budgets.observeMonth(month),
+            budgets.observeMonth(period.month),
             draft,
         ) { entries, all, monthBudgets, current ->
             val entry = entries.firstOrNull { it.id == found.id }

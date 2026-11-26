@@ -44,3 +44,16 @@ DELETE FROM debt_payment WHERE debt_id = ?;
 
 deleteById:
 DELETE FROM debt WHERE id = ?;
+
+-- For changing the currency: every debt and payment, rewritten one by one.
+debtAmounts:
+SELECT id, principal_minor, currency FROM debt;
+
+updateDebtAmount:
+UPDATE debt SET principal_minor = :principalMinor, currency = :currency, updated_at = :updatedAt WHERE id = :id;
+
+paymentAmounts:
+SELECT id, amount_minor, currency FROM debt_payment;
+
+updatePaymentAmount:
+UPDATE debt_payment SET amount_minor = :amountMinor, currency = :currency, updated_at = :updatedAt WHERE id = :id;

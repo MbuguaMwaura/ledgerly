@@ -10,6 +10,7 @@ import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
 import app.ledgerly.shared.domain.model.DebtPayment
 import app.ledgerly.shared.domain.model.EntryKind
+import app.ledgerly.shared.domain.model.MONTH_START_DAYS
 import app.ledgerly.shared.domain.model.ThemeChoice
 import app.ledgerly.shared.domain.model.Transaction
 import app.ledgerly.shared.domain.model.UserSettings
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 import kotlinx.coroutines.flow.map
 import app.ledgerly.shared.money.CurrencyCode
+import app.ledgerly.shared.money.convertMinorUnits
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -174,6 +176,29 @@ class LocalSettingsRepository(
         }
     }
 
+    override suspend fun changeCurrency(to: CurrencyCode, rate: Double, at: Instant) = withContext<Unit>(io) {
+        db.transaction {
+            val current = db.settingQueries.selectAll().executeAsList().associate { it.name to it.content }.toSettings()
+            val from = current.currency
+            if (from == to) return@transaction
+            fun convert(minor: Long) = convertMinorUnits(minor, from, to, rate)
+            val stamp = at.toDb()
+            db.entryQueries.entryAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.entryQueries.updateEntryAmount(convert(it.amount_minor), to.name, stamp, it.id)
+            }
+            db.budgetQueries.budgetAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.budgetQueries.updateBudgetAmount(convert(it.limit_minor), to.name, stamp, it.category_id, it.month)
+            }
+            db.debtQueries.debtAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.debtQueries.updateDebtAmount(convert(it.principal_minor), to.name, stamp, it.id)
+            }
+            db.debtQueries.paymentAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.debtQueries.updatePaymentAmount(convert(it.amount_minor), to.name, stamp, it.id)
+            }
+            current.copy(currency = to).toMap().forEach { (key, value) -> db.settingQueries.upsert(key, value) }
+        }
+    }
+
     private fun Map<String, String>.toSettings(): UserSettings {
         val defaults = UserSettings()
         return UserSettings(
@@ -184,6 +209,7 @@ class LocalSettingsRepository(
             trackDebts = this[TRACK_DEBTS]?.toBooleanStrictOrNull() ?: defaults.trackDebts,
             reminderOn = this[REMINDER_ON]?.toBooleanStrictOrNull() ?: defaults.reminderOn,
             appLock = this[APP_LOCK]?.toBooleanStrictOrNull() ?: defaults.appLock,
+            monthStartDay = this[MONTH_START_DAY]?.toIntOrNull()?.takeIf { it in MONTH_START_DAYS } ?: defaults.monthStartDay,
             hideAmounts = this[HIDE_AMOUNTS]?.toBooleanStrictOrNull() ?: defaults.hideAmounts,
             reminderMinutes = this[REMINDER_MINUTES]?.toIntOrNull()?.takeIf { it in 0 until 24 * 60 } ?: defaults.reminderMinutes,
             startedOn = this[STARTED_ON]?.takeIf { it.isNotEmpty() }?.let(LocalDate::parse),
@@ -199,6 +225,7 @@ class LocalSettingsRepository(
         REMINDER_ON to reminderOn.toString(),
         REMINDER_MINUTES to reminderMinutes.toString(),
         APP_LOCK to appLock.toString(),
+        MONTH_START_DAY to monthStartDay.toString(),
         HIDE_AMOUNTS to hideAmounts.toString(),
         STARTED_ON to (startedOn?.toString() ?: ""),
     )
@@ -212,6 +239,7 @@ class LocalSettingsRepository(
         const val REMINDER_ON = "reminder_on"
         const val REMINDER_MINUTES = "reminder_minutes"
         const val APP_LOCK = "app_lock"
+        const val MONTH_START_DAY = "month_start_day"
         const val HIDE_AMOUNTS = "hide_amounts"
         const val STARTED_ON = "started_on"
     }

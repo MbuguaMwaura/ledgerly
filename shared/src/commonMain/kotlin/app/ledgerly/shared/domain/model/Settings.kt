@@ -10,7 +10,7 @@ enum class ThemeChoice { System, Light, Dark }
 data class UserSettings(
     /** What Home greets the user by. Empty until they give one. */
     val name: String = "",
-    /** The currency every amount is logged in. Chosen once, during onboarding. */
+    /** The currency every amount is logged in. Chosen during onboarding; changing it later converts everything. */
     val currency: CurrencyCode = CurrencyCode.KES,
     val theme: ThemeChoice = ThemeChoice.System,
     /** Off hides budget cards and the Budgets view. Nothing is deleted. */
@@ -25,6 +25,8 @@ data class UserSettings(
     val appLock: Boolean = false,
     /** Show "KES ••••" instead of figures, for using the app where others can see the screen. */
     val hideAmounts: Boolean = false,
+    /** The day each budget month starts, 1 to 28. Set it to payday so a month runs payday to payday. */
+    val monthStartDay: Int = 1,
     /** The day onboarding finished, or null while it hasn't. */
     val startedOn: LocalDate? = null,
 ) {

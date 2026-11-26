@@ -236,3 +236,26 @@ final class SettingsModel {
         owner.clear()
     }
 }
+
+@MainActor
+@Observable
+final class ChangeCurrencyModel {
+    private(set) var state: ChangeCurrencyUiState
+    @ObservationIgnored private let owner = ScreenViewModelOwner()
+    @ObservationIgnored let viewModel: ChangeCurrencyViewModel
+
+    init() {
+        viewModel = ViewModels.shared.changeCurrency(owner: owner)
+        state = viewModel.uiState.value
+    }
+
+    func observe() async {
+        for await next in viewModel.uiState {
+            state = next
+        }
+    }
+
+    deinit {
+        owner.clear()
+    }
+}

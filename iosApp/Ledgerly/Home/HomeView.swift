@@ -27,7 +27,7 @@ struct HomeView: View {
                     HStack {
                         Text(hasBudgets ? "Left to spend" : "Spent this month").ledgerlyText(LedgerlyText.heading).foregroundStyle(LedgerlyColor.ink)
                         Spacer()
-                        Text(Date.now.formatted(.dateTime.month(.wide))).ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
+                        Text(state.periodLabel).ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
                     }
                     AmountText(money: hasBudgets ? state.leftToSpend : state.spent, style: LedgerlyText.amountHero)
                         .padding(.top, 6)

@@ -141,7 +141,7 @@ fun HomeScreen(
             LedgerlyCard {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(if (hasBudgets) "Left to spend" else "Spent this month", style = LedgerlyTextStyles.heading, color = colors.ink)
-                    Text(now.month.getDisplayName(TextStyle.FULL, Locale.UK), style = LedgerlyTextStyles.label, color = colors.inkMuted)
+                    Text(state.periodLabel, style = LedgerlyTextStyles.label, color = colors.inkMuted)
                 }
                 Amount(if (hasBudgets) state.leftToSpend else state.spent, style = LedgerlyTextStyles.amountHero, modifier = Modifier.padding(top = 6.dp))
                 Text(

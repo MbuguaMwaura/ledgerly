@@ -1,5 +1,7 @@
 package app.ledgerly.shared.money
 
+import kotlin.math.roundToLong
+
 /**
  * An amount of money in integer minor units (cents), so sums never drift.
  * `Money(65_000, CurrencyCode.KES)` is KES 650.00.
@@ -85,6 +87,15 @@ data class MoneyParts(
         append(currencyCode).append(' ').append(whole)
         if (withFraction && fraction.isNotEmpty()) append('.').append(fraction)
     }
+}
+
+/**
+ * [minorUnits] of [from] in [to], at [rate] units of [to] per unit of [from], rounded to the
+ * nearest minor unit. A rate of 1 keeps the numbers: KES 1,250 becomes UGX 1,250.
+ */
+fun convertMinorUnits(minorUnits: Long, from: CurrencyCode, to: CurrencyCode, rate: Double): Long {
+    require(rate > 0) { "rate must be positive, was $rate" }
+    return (minorUnits.toDouble() * rate * to.minorUnitFactor / from.minorUnitFactor).roundToLong()
 }
 
 /** What stands in for the digits while amounts are hidden. */

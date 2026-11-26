@@ -157,6 +157,10 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             vm.onAppLockChange(true)
             assertTrue(awaitState { it.appLock }.appLock)
 
+            assertEquals("1st, a calendar month", changed.monthStartText)
+            vm.onMonthStartDayChange(25)
+            assertEquals("25th, so this month is 25 Nov – 24 Dec", awaitState { it.monthStartDay == 25 }.monthStartText)
+            vm.onMonthStartDayChange(31)
             vm.onHideAmountsChange(true)
             assertEquals("KES •••• a month across 2 categories", awaitState { it.hideAmounts }.budgetsText)
 

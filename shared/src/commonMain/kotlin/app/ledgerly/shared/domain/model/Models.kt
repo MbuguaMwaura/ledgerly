@@ -2,7 +2,11 @@ package app.ledgerly.shared.domain.model
 
 import app.ledgerly.shared.money.Money
 import kotlinx.datetime.Instant
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 enum class EntryKind { Expense, Income }
 
@@ -56,8 +60,49 @@ data class BudgetMonth(val year: Int, val month: Int) : Comparable<BudgetMonth> 
 
     override fun compareTo(other: BudgetMonth): Int = compareValuesBy(this, other, { it.year }, { it.month })
 
+    fun previous(): BudgetMonth = if (month == 1) BudgetMonth(year - 1, 12) else BudgetMonth(year, month - 1)
+
+    fun next(): BudgetMonth = if (month == 12) BudgetMonth(year + 1, 1) else BudgetMonth(year, month + 1)
+
     companion object {
         fun of(date: LocalDate) = BudgetMonth(date.year, date.monthNumber)
+    }
+}
+
+/** The days a budget month can start on. Capped at 28 so every month has the day. */
+val MONTH_START_DAYS: IntRange = 1..28
+
+/**
+ * A budget month as the user counts it: from their payday to the day before the next one.
+ * With [startDay] 1 it's the calendar month. Otherwise the period is named after the month it
+ * ends in, so 25 Oct – 24 Nov is November's: moving the start day never moves a budget month
+ * backwards, and budgets set for it keep applying.
+ */
+data class BudgetPeriod(val month: BudgetMonth, val startDay: Int = 1) {
+    init {
+        require(startDay in MONTH_START_DAYS) { "startDay must be 1..28, was $startDay" }
+    }
+
+    val firstDay: LocalDate =
+        if (startDay == 1) month.firstDay else month.previous().firstDay.plus(startDay - 1, DateTimeUnit.DAY)
+
+    val lastDay: LocalDate = firstDay.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+
+    val lengthInDays: Int get() = firstDay.daysUntil(lastDay) + 1
+
+    fun contains(date: LocalDate): Boolean = date in firstDay..lastDay
+
+    /** Which day of the period [date] is, from 1. */
+    fun dayNumber(date: LocalDate): Int = firstDay.daysUntil(date) + 1
+
+    val days: List<LocalDate> get() = (0 until lengthInDays).map { firstDay.plus(it, DateTimeUnit.DAY) }
+
+    companion object {
+        fun of(date: LocalDate, startDay: Int = 1): BudgetPeriod = when {
+            startDay == 1 -> BudgetPeriod(BudgetMonth.of(date), 1)
+            date.dayOfMonth >= startDay -> BudgetPeriod(BudgetMonth.of(date).next(), startDay)
+            else -> BudgetPeriod(BudgetMonth.of(date), startDay)
+        }
     }
 }
 

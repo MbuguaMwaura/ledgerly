@@ -4,6 +4,7 @@ import SwiftUI
 /// Profile, appearance, money, habit, what you track, and about.
 struct SettingsView: View {
     let onEditBudgets: () -> Void
+    let onChangeCurrency: () -> Void
     let onClose: () -> Void
 
     @State private var model = SettingsModel()
@@ -46,7 +47,7 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                     }
 
-                    Section("Money") {
+                    Section {
                         if state.trackBudgets {
                             Button(action: onEditBudgets) {
                                 LabeledContent {
@@ -57,12 +58,26 @@ struct SettingsView: View {
                                 }
                             }
                         }
-                        LabeledContent {
-                            Text(state.currencyText)
+                        Picker(selection: Binding(get: { state.monthStartDay }, set: { viewModel.onMonthStartDayChange(day: $0) })) {
+                            ForEach(state.monthStartOptions, id: \.day) { option in
+                                Text(option.day == 1 ? "\(option.label) (calendar month)" : option.label).tag(option.day)
+                            }
                         } label: {
-                            Text("Currency")
-                            Text("Chosen when you started")
+                            Text("Budget month starts on")
+                            Text(state.monthStartText)
                         }
+                        Button(action: onChangeCurrency) {
+                            LabeledContent {
+                                Image(systemName: "chevron.right").foregroundStyle(LedgerlyColor.inkFaint)
+                            } label: {
+                                Text("Currency").foregroundStyle(LedgerlyColor.ink)
+                                Text(state.currencyText)
+                            }
+                        }
+                    } header: {
+                        Text("Money")
+                    } footer: {
+                        Text("Set the start to your payday so each budget month runs from one payday to the next.")
                     }
 
                     Section {

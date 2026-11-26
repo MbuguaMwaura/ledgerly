@@ -1,6 +1,8 @@
 package app.ledgerly.shared.presentation.common
 
+import app.ledgerly.shared.domain.model.BudgetPeriod
 import app.ledgerly.shared.domain.model.Category
+import app.ledgerly.shared.domain.time.AppClock
 import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
 import app.ledgerly.shared.domain.model.EntryKind
@@ -122,6 +124,32 @@ internal fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     today -> "Today"
     LocalDate.fromEpochDays(today.toEpochDays() - 1) -> "Yesterday"
     else -> "${WEEKDAYS[date.dayOfWeek.ordinal]}, ${date.dayOfMonth} ${MONTHS[date.monthNumber - 1]}"
+}
+
+/** The budget month today falls in, following the user's month start day as it changes. */
+internal fun SettingsRepository.period(clock: AppClock): Flow<BudgetPeriod> =
+    observe().map { it.monthStartDay }.distinctUntilChanged().map { BudgetPeriod.of(clock.today(), it) }
+
+private val MONTH_NAMES = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+
+/** "25 Oct". */
+fun dayMonth(date: LocalDate): String = "${date.dayOfMonth} ${MONTHS[date.monthNumber - 1]}"
+
+/** "November" for a calendar month, or "25 Oct – 24 Nov" for one that starts on payday. */
+fun periodLabel(period: BudgetPeriod): String =
+    if (period.startDay == 1) MONTH_NAMES[period.month.month - 1]
+    else "${dayMonth(period.firstDay)} – ${dayMonth(period.lastDay)}"
+
+/** "1st", "2nd", "25th". */
+fun ordinal(day: Int): String = "$day" + when {
+    day % 100 in 11..13 -> "th"
+    day % 10 == 1 -> "st"
+    day % 10 == 2 -> "nd"
+    day % 10 == 3 -> "rd"
+    else -> "th"
 }
 
 /** The currency the user logs in, as it changes. */

@@ -1,7 +1,7 @@
 package app.ledgerly.shared.domain.rules
 
 import app.ledgerly.shared.domain.model.Budget
-import app.ledgerly.shared.domain.model.BudgetMonth
+import app.ledgerly.shared.domain.model.BudgetPeriod
 import app.ledgerly.shared.money.Money
 import kotlinx.datetime.LocalDate
 
@@ -65,9 +65,9 @@ data class LeftToSpend(
 )
 
 /** The Home headline: what's left across every budget this month, and per day from today. */
-fun leftToSpend(totalLimit: Money, spent: Money, month: BudgetMonth, today: LocalDate): LeftToSpend {
+fun leftToSpend(totalLimit: Money, spent: Money, period: BudgetPeriod, today: LocalDate): LeftToSpend {
     val left = totalLimit - spent
-    val daysLeft = if (month.contains(today)) month.lengthInDays - today.dayOfMonth + 1 else month.lengthInDays
+    val daysLeft = if (period.contains(today)) period.lengthInDays - period.dayNumber(today) + 1 else period.lengthInDays
     val perDay = if (left.isNegative) Money.zero(left.currency) else Money(left.minorUnits / daysLeft, left.currency)
     return LeftToSpend(totalLimit, spent, left, daysLeft, perDay)
 }

@@ -41,9 +41,6 @@ import app.ledgerly.shared.presentation.spend.SpendUiState
 import app.ledgerly.shared.presentation.spend.SpendViewModel
 import kotlinx.datetime.LocalDate
 import org.koin.androidx.compose.koinViewModel
-import java.time.Month
-import java.time.format.TextStyle
-import java.util.Locale
 
 private enum class SpendView(val label: String) { Log("Daily log"), Budgets("Budgets") }
 
@@ -71,24 +68,22 @@ fun SpendScreen(
 ) {
     val colors = LedgerlyTheme.colors
     var view by rememberSaveable { mutableStateOf(SpendView.Log) }
-    val monthName = Month.of(state.month.month).getDisplayName(TextStyle.FULL, Locale.UK)
-    val today = state.bars.firstOrNull { it.isToday }?.date
-    val daysLeft = today?.let { state.month.lengthInDays - it.dayOfMonth + 1 }
+    val daysLeft: Int? = state.daysLeft
 
     TabScreen(modifier) {
         item("title") { TabTitle("Spending") }
 
         item("hero") {
             LedgerlyCard {
-                Text("Spent in $monthName", style = LedgerlyTextStyles.label, color = colors.inkMuted)
+                Text(state.title, style = LedgerlyTextStyles.label, color = colors.inkMuted)
                 Amount(state.spentThisMonth, style = LedgerlyTextStyles.amountHero, modifier = Modifier.padding(top = 6.dp))
-                if (today != null && state.spentThisMonth.minorUnits > 0) {
-                    val pace = Money(state.spentThisMonth.minorUnits / today.dayOfMonth * state.month.lengthInDays, state.spentThisMonth.currency)
+                val pace = state.pace
+                if (pace != null) {
                     Text(
                         buildAnnotatedString {
                             append("On pace for ")
                             withStyle(SpanStyle(color = colors.ink, fontWeight = FontWeight.SemiBold)) { append(pace.label()) }
-                            append(" by ${state.month.lastDay.short()}")
+                            append(" by ${state.endLabel}")
                         },
                         style = LedgerlyTextStyles.label,
                         color = colors.inkMuted,

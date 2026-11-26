@@ -25,10 +25,29 @@ class SpendViewModelTest : ViewModelTest() {
         viewModel().uiState.test {
             val state = awaitState { !it.isLoading && it.spentThisMonth == kes(650) }
             assertEquals(30, state.bars.size)
+            assertEquals("Spent in November", state.title)
             val bar = state.bars.single { it.isToday }
             assertEquals(today, bar.date)
             assertEquals(kes(650), bar.spent)
             assertTrue(state.bars.filter { it.date > today }.all { it.isFuture })
+        }
+    }
+
+    @Test
+    fun followsAPaydayMonth() = test {
+        LogEntry(transactions, clock)(EntryKind.Expense, kes(650), "food", occurredAt = nairobi("2026-11-24T08:00"))
+        LogEntry(transactions, clock)(EntryKind.Expense, kes(400), "food")
+        settings.update { it.copy(monthStartDay = 25) }
+        viewModel().uiState.test {
+            // Today is the 25th, payday, so the month started today and yesterday's spend is last month's.
+            val state = awaitState { !it.isLoading && it.period.startDay == 25 && it.spentThisMonth == kes(400) }
+            assertEquals("Spent since 25 Nov", state.title)
+            assertEquals(30, state.bars.size)
+            assertEquals(LocalDate(2026, 11, 25), state.bars.first().date)
+            assertEquals(30, state.daysLeft)
+            assertEquals(kes(12_000), state.pace)
+            assertEquals("24 Dec", state.endLabel)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
