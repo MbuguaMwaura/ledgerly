@@ -91,6 +91,15 @@ struct SettingsView: View {
                         }
                     }
 
+                    Section("Privacy") {
+                        let canLock = AppLock.isAvailable || state.appLock
+                        Toggle(isOn: Binding(get: { state.appLock }, set: { on in setAppLock(on) })) {
+                            Text("App lock")
+                            Text(canLock ? "Ask for \(AppLock.methodName) when Ledgerly opens" : "Set up a passcode on your iPhone to use this")
+                        }
+                        .disabled(!canLock)
+                    }
+
                     Section {
                         Toggle(isOn: .constant(true)) {
                             Text("Spending")
@@ -128,6 +137,18 @@ struct SettingsView: View {
             }
         }
         .task { await model.observe() }
+    }
+
+    private func setAppLock(_ on: Bool) {
+        guard on else {
+            model.viewModel.onAppLockChange(on: false)
+            return
+        }
+        Task {
+            if await AppLock.authenticate(reason: "Turn on app lock") {
+                model.viewModel.onAppLockChange(on: true)
+            }
+        }
     }
 
     private func setReminder(_ on: Bool) {

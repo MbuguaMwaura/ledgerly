@@ -75,6 +75,28 @@ class OnboardingAndSettingsTest : ViewModelTest() {
     }
 
     @Test
+    fun appLockLocksOnStartAndWhenHidden() = test {
+        settings.update { it.copy(name = "Otieno", startedOn = LocalDate(2026, 11, 20)) }
+        val app = AppViewModel(settings, logs, clock)
+        assertFalse(app.uiState.first { !it.isLoading }.isLocked)
+
+        // Hiding the app with the lock off doesn't lock it once the lock is turned on.
+        app.onAppHidden()
+        settings.update { it.copy(appLock = true) }
+        val on = app.uiState.first { it.appLock }
+        assertFalse(on.isLocked)
+
+        app.onAppHidden()
+        assertTrue(app.uiState.first { it.isLocked }.isLocked)
+        app.onUnlocked()
+        assertFalse(app.uiState.first { !it.isLocked }.isLocked)
+
+        // A fresh start with the lock on begins locked.
+        val fresh = AppViewModel(settings, logs, clock)
+        assertTrue(fresh.uiState.first { !it.isLoading }.isLocked)
+    }
+
+    @Test
     fun loggingTodayDropsTodaysReminder() = test {
         settings.update { it.copy(name = "Otieno", startedOn = LocalDate(2026, 11, 20), reminderOn = true) }
         val app = AppViewModel(settings, logs, clock)
@@ -122,6 +144,9 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             val changed = awaitState { it.theme == ThemeChoice.Dark && !it.trackDebts }
             assertTrue(changed.trackBudgets)
             assertEquals("Off", changed.reminderText)
+            assertFalse(changed.appLock)
+            vm.onAppLockChange(true)
+            assertTrue(awaitState { it.appLock }.appLock)
 
             vm.onReminderChange(true)
             vm.onReminderTimeChange(19 * 60 + 30)
