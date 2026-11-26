@@ -1,6 +1,7 @@
 package app.ledgerly.android
 
 import android.app.Application
+import app.ledgerly.android.reminders.Reminders
 import app.ledgerly.shared.di.platformModule
 import app.ledgerly.shared.di.sharedModule
 import org.koin.android.ext.koin.androidContext
@@ -13,5 +14,6 @@ class LedgerlyApplication : Application() {
             androidContext(this@LedgerlyApplication)
             modules(sharedModule, platformModule)
         }
+        Reminders.createChannel(this)
     }
 }

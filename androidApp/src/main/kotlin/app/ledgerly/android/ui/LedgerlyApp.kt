@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ledgerly.android.reminders.ReminderSync
 import app.ledgerly.android.ui.components.ScopedViewModels
 import app.ledgerly.android.ui.onboarding.OnboardingRoute
 import app.ledgerly.android.ui.theme.LedgerlyTheme
@@ -24,6 +25,7 @@ fun LedgerlyApp(versionName: String, viewModel: AppViewModel = koinViewModel()) 
         ThemeChoice.Light -> false
         ThemeChoice.Dark -> true
     }
+    if (!app.isLoading) ReminderSync(app.reminderTimes, app.reminderMessage)
     LedgerlyTheme(darkTheme = dark) {
         when {
             app.isLoading -> Box(Modifier.fillMaxSize().background(LedgerlyTheme.colors.canvas))

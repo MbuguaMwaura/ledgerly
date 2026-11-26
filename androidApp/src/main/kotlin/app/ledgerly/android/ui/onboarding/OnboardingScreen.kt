@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ledgerly.android.reminders.rememberNotificationPermission
 import app.ledgerly.android.ui.budgets.budgetEditorItems
 import app.ledgerly.android.ui.components.ButtonStyle
 import app.ledgerly.android.ui.components.Chip
@@ -57,7 +58,7 @@ import app.ledgerly.shared.presentation.onboarding.OnboardingUiState
 import app.ledgerly.shared.presentation.onboarding.OnboardingViewModel
 import org.koin.androidx.compose.koinViewModel
 
-/** First run: welcome, name and currency, what to track, first budgets, done. */
+/** First run: welcome, name and currency, what to track, first budgets, a daily reminder, done. */
 @Composable
 fun OnboardingRoute(
     viewModel: OnboardingViewModel = koinViewModel(),
@@ -67,6 +68,7 @@ fun OnboardingRoute(
     val budgets by budgetsViewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(budgets.isSaved) { if (budgets.isSaved) viewModel.onBudgetsSaved() }
     BackHandler(enabled = state.step != OnboardingStep.Welcome) { viewModel.onBack() }
+    val askForNotifications = rememberNotificationPermission(viewModel::onReminderAnswer)
 
     val colors = LedgerlyTheme.colors
     Column(
@@ -97,6 +99,12 @@ fun OnboardingRoute(
                     }
                 }
             }
+            OnboardingStep.Reminder -> Reminder(
+                state,
+                onTimeChange = viewModel::onReminderTimeChange,
+                onAccept = askForNotifications,
+                onDecline = { viewModel.onReminderAnswer(false) },
+            )
             OnboardingStep.Done -> Done(state, viewModel::onFinish)
         }
     }
@@ -282,6 +290,54 @@ private fun Choice(
                 .border(1.dp, if (on) colors.cobalt else colors.line, CircleShape),
             contentAlignment = Alignment.Center,
         ) { if (on) LedgerlyIcon(LedgerlyIcons.Check, size = 16.dp, tint = colors.onAction) }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ColumnScope.Reminder(
+    state: OnboardingUiState,
+    onTimeChange: (Int) -> Unit,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit,
+) {
+    val colors = LedgerlyTheme.colors
+    Step(
+        footer = {
+            LedgerlyButton(state.reminderButton, onAccept, modifier = Modifier.fillMaxWidth())
+            LedgerlyButton("Not now", onDecline, style = ButtonStyle.Quiet, modifier = Modifier.fillMaxWidth())
+        },
+    ) {
+        StepTitle("A nudge to keep your streak", "Once a day, only if you haven't logged anything yet. Turn it off any time in Settings.")
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.surface)
+                .border(1.dp, colors.line, RoundedCornerShape(16.dp))
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(colors.cobaltSoft),
+                contentAlignment = Alignment.Center,
+            ) { LedgerlyIcon(LedgerlyIcons.Bell, size = 22.dp, tint = colors.cobalt) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Ledgerly", style = LedgerlyTextStyles.label, color = colors.inkMuted)
+                Text(state.reminderMessage, style = LedgerlyTextStyles.body, color = colors.ink)
+            }
+        }
+        Field("Remind me at", Modifier.padding(top = 24.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.reminderOptions.forEach { option ->
+                    Chip(option.label, selected = option.minutes == state.reminderMinutes, onClick = { onTimeChange(option.minutes) })
+                }
+            }
+        }
     }
 }
 

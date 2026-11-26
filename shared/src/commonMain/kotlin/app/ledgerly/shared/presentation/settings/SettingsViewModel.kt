@@ -1,5 +1,8 @@
 package app.ledgerly.shared.presentation.settings
 
+import app.ledgerly.shared.domain.rules.reminderTimeLabel
+import app.ledgerly.shared.domain.rules.REMINDER_OPTIONS
+import app.ledgerly.shared.domain.rules.ReminderOption
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.BudgetMonth
@@ -33,6 +36,11 @@ data class SettingsUiState(
     val freezesText: String,
     val trackBudgets: Boolean,
     val trackDebts: Boolean,
+    val reminderOn: Boolean,
+    val reminderMinutes: Int,
+    /** "Every day at 20:00 if nothing is logged yet" or "Off". */
+    val reminderText: String,
+    val reminderOptions: List<ReminderOption>,
 )
 
 class SettingsViewModel(
@@ -73,11 +81,18 @@ class SettingsViewModel(
             freezesText = if (streak.freezesHeld == 0) "None left" else "${streak.freezesHeld} left",
             trackBudgets = current.trackBudgets,
             trackDebts = current.trackDebts,
+            reminderOn = current.reminderOn,
+            reminderMinutes = current.reminderMinutes,
+            reminderText = if (current.reminderOn) "Every day at ${reminderTimeLabel(current.reminderMinutes)} if nothing is logged yet" else "Off",
+            reminderOptions = optionsWith(current.reminderMinutes),
         )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        SettingsUiState(true, "", "", "", ThemeChoice.System, "", "", "", trackBudgets = true, trackDebts = true),
+        SettingsUiState(
+            true, "", "", "", ThemeChoice.System, "", "", "", trackBudgets = true, trackDebts = true,
+            reminderOn = false, reminderMinutes = 20 * 60, reminderText = "", reminderOptions = REMINDER_OPTIONS,
+        ),
     )
 
     fun onNameChange(name: String) {
@@ -96,8 +111,23 @@ class SettingsViewModel(
         viewModelScope.launch { settings.update { it.copy(trackDebts = on) } }
     }
 
+    /** Turning this on is only half of it: each app asks for notification permission first. */
+    fun onReminderChange(on: Boolean) {
+        viewModelScope.launch { settings.update { it.copy(reminderOn = on) } }
+    }
+
+    fun onReminderTimeChange(minutes: Int) {
+        if (minutes !in 0 until 24 * 60) return
+        viewModelScope.launch { settings.update { it.copy(reminderMinutes = minutes) } }
+    }
+
     private companion object {
         const val MAX_NAME_LENGTH = 40
         val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     }
 }
+
+/** The usual choices, plus the saved time if it isn't one of them. */
+private fun optionsWith(minutes: Int): List<ReminderOption> =
+    if (REMINDER_OPTIONS.any { it.minutes == minutes }) REMINDER_OPTIONS
+    else (REMINDER_OPTIONS + ReminderOption(minutes, reminderTimeLabel(minutes))).sortedBy { it.minutes }

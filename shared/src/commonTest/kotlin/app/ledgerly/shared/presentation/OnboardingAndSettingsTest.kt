@@ -10,6 +10,7 @@ import app.ledgerly.shared.presentation.app.AppViewModel
 import app.ledgerly.shared.presentation.onboarding.OnboardingStep
 import app.ledgerly.shared.presentation.onboarding.OnboardingViewModel
 import app.ledgerly.shared.presentation.settings.SettingsViewModel
+import app.ledgerly.shared.testing.nairobi
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -20,7 +21,7 @@ import kotlin.test.assertTrue
 class OnboardingAndSettingsTest : ViewModelTest() {
     @Test
     fun onboardingWalksTheStepsAndSaves() = test {
-        val app = AppViewModel(settings)
+        val app = AppViewModel(settings, logs, clock)
         val vm = OnboardingViewModel(settings, clock)
         assertFalse(app.uiState.first { !it.isLoading }.isOnboarded)
         vm.uiState.test {
@@ -29,7 +30,7 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             val about = awaitState { it.step == OnboardingStep.AboutYou }
             assertFalse(about.canContinue)
             assertEquals(1, about.progress)
-            assertEquals(3, about.progressCount)
+            assertEquals(4, about.progressCount)
 
             vm.onNameChange("Wanjiru Kamau")
             vm.onCurrencyChange(CurrencyCode.UGX)
@@ -38,12 +39,20 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             awaitState { it.step == OnboardingStep.Track }
 
             vm.onTrackBudgetsChange(false)
-            assertEquals(2, awaitState { !it.trackBudgets }.progressCount)
+            assertEquals(3, awaitState { !it.trackBudgets }.progressCount)
             vm.onNext()
-            awaitState { it.step == OnboardingStep.Done }
+            awaitState { it.step == OnboardingStep.Reminder }
             vm.onBack()
             awaitState { it.step == OnboardingStep.Track }
             vm.onNext()
+            assertEquals("Remind me at 20:00", awaitState { it.step == OnboardingStep.Reminder }.reminderButton)
+            vm.onReminderTimeChange(21 * 60)
+            assertEquals("Remind me at 21:00", awaitState { it.reminderMinutes == 21 * 60 }.reminderButton)
+            vm.onReminderAnswer(true)
+            awaitState { it.step == OnboardingStep.Done }
+            vm.onBack()
+            awaitState { it.step == OnboardingStep.Reminder }
+            vm.onReminderAnswer(true)
             awaitState { it.step == OnboardingStep.Done }
 
             vm.onFinish()
@@ -54,10 +63,26 @@ class OnboardingAndSettingsTest : ViewModelTest() {
         assertEquals(CurrencyCode.UGX, saved.currency)
         assertFalse(saved.trackBudgets)
         assertEquals(LocalDate(2026, 11, 25), saved.startedOn)
+        assertTrue(saved.reminderOn)
+        assertEquals(21 * 60, saved.reminderMinutes)
 
         val shell = app.uiState.first { it.isOnboarded }
         assertEquals("Wanjiru", shell.firstName)
         assertFalse(shell.trackBudgets)
+        // 18:00 now, nothing logged: today's 21:00 is the first of a week of reminders.
+        assertEquals(7, shell.reminderTimes.size)
+        assertEquals(nairobi("2026-11-25T21:00").toEpochMilliseconds(), shell.reminderTimes.first())
+    }
+
+    @Test
+    fun loggingTodayDropsTodaysReminder() = test {
+        settings.update { it.copy(name = "Otieno", startedOn = LocalDate(2026, 11, 20), reminderOn = true) }
+        val app = AppViewModel(settings, logs, clock)
+        assertEquals(nairobi("2026-11-25T20:00").toEpochMilliseconds(), app.uiState.first { it.reminderTimes.isNotEmpty() }.reminderTimes.first())
+        LogNothingSpent(logs, clock)()
+        assertEquals(nairobi("2026-11-26T20:00").toEpochMilliseconds(), app.uiState.first { it.reminderTimes.firstOrNull() != nairobi("2026-11-25T20:00").toEpochMilliseconds() }.reminderTimes.first())
+        settings.update { it.copy(reminderOn = false) }
+        assertTrue(app.uiState.first { it.reminderTimes.isEmpty() }.reminderTimes.isEmpty())
     }
 
     @Test
@@ -71,6 +96,8 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             vm.onNext()
             awaitState { it.step == OnboardingStep.Budgets }
             vm.onBudgetsSaved()
+            awaitState { it.step == OnboardingStep.Reminder }
+            vm.onReminderAnswer(false)
             assertEquals("Your budgets are set. Home shows what's left each day.", awaitState { it.step == OnboardingStep.Done }.doneText)
             cancelAndIgnoreRemainingEvents()
         }
@@ -94,6 +121,13 @@ class OnboardingAndSettingsTest : ViewModelTest() {
             vm.onTrackDebtsChange(false)
             val changed = awaitState { it.theme == ThemeChoice.Dark && !it.trackDebts }
             assertTrue(changed.trackBudgets)
+            assertEquals("Off", changed.reminderText)
+
+            vm.onReminderChange(true)
+            vm.onReminderTimeChange(19 * 60 + 30)
+            val reminder = awaitState { it.reminderOn && it.reminderMinutes == 19 * 60 + 30 }
+            assertEquals("Every day at 19:30 if nothing is logged yet", reminder.reminderText)
+            assertEquals(listOf("08:00", "13:00", "19:00", "19:30", "20:00", "21:00"), reminder.reminderOptions.map { it.label })
             cancelAndIgnoreRemainingEvents()
         }
     }

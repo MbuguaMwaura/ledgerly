@@ -182,6 +182,8 @@ class LocalSettingsRepository(
             theme = this[THEME]?.let { t -> ThemeChoice.entries.firstOrNull { it.name == t } } ?: defaults.theme,
             trackBudgets = this[TRACK_BUDGETS]?.toBooleanStrictOrNull() ?: defaults.trackBudgets,
             trackDebts = this[TRACK_DEBTS]?.toBooleanStrictOrNull() ?: defaults.trackDebts,
+            reminderOn = this[REMINDER_ON]?.toBooleanStrictOrNull() ?: defaults.reminderOn,
+            reminderMinutes = this[REMINDER_MINUTES]?.toIntOrNull()?.takeIf { it in 0 until 24 * 60 } ?: defaults.reminderMinutes,
             startedOn = this[STARTED_ON]?.takeIf { it.isNotEmpty() }?.let(LocalDate::parse),
         )
     }
@@ -192,6 +194,8 @@ class LocalSettingsRepository(
         THEME to theme.name,
         TRACK_BUDGETS to trackBudgets.toString(),
         TRACK_DEBTS to trackDebts.toString(),
+        REMINDER_ON to reminderOn.toString(),
+        REMINDER_MINUTES to reminderMinutes.toString(),
         STARTED_ON to (startedOn?.toString() ?: ""),
     )
 
@@ -201,6 +205,8 @@ class LocalSettingsRepository(
         const val THEME = "theme"
         const val TRACK_BUDGETS = "track_budgets"
         const val TRACK_DEBTS = "track_debts"
+        const val REMINDER_ON = "reminder_on"
+        const val REMINDER_MINUTES = "reminder_minutes"
         const val STARTED_ON = "started_on"
     }
 }
