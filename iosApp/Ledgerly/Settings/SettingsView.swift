@@ -4,6 +4,7 @@ import SwiftUI
 /// Profile, appearance, money, habit, what you track, and about.
 struct SettingsView: View {
     let onEditBudgets: () -> Void
+    let onChangeCurrency: () -> Void
     let onClose: () -> Void
 
     @State private var model = SettingsModel()
@@ -65,11 +66,13 @@ struct SettingsView: View {
                             Text("Budget month starts on")
                             Text(state.monthStartText)
                         }
-                        LabeledContent {
-                            Text(state.currencyText)
-                        } label: {
-                            Text("Currency")
-                            Text("Chosen when you started")
+                        Button(action: onChangeCurrency) {
+                            LabeledContent {
+                                Image(systemName: "chevron.right").foregroundStyle(LedgerlyColor.inkFaint)
+                            } label: {
+                                Text("Currency").foregroundStyle(LedgerlyColor.ink)
+                                Text(state.currencyText)
+                            }
                         }
                     } header: {
                         Text("Money")

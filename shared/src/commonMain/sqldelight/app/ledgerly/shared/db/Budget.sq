@@ -29,3 +29,11 @@ INSERT OR REPLACE INTO budget (category_id, month, limit_minor, currency, update
 
 delete:
 DELETE FROM budget WHERE category_id = ? AND month = ?;
+
+-- For changing the currency: every limit, rewritten one by one.
+budgetAmounts:
+SELECT category_id, month, limit_minor, currency FROM budget;
+
+updateBudgetAmount:
+UPDATE budget SET limit_minor = :limitMinor, currency = :currency, updated_at = :updatedAt
+WHERE category_id = :categoryId AND month = :month;

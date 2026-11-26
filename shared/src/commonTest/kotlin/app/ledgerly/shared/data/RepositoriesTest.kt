@@ -158,4 +158,31 @@ class RepositoriesTest {
         assertTrue(saved.reminderOn)
         assertEquals(21 * 60, saved.reminderMinutes)
     }
+
+    @Test
+    fun changingCurrencyRewritesEveryAmount() = test {
+        LogEntry(transactions, clock)(EntryKind.Expense, Money(65_050, KES), "food")
+        budgets.save(Budget("food", BudgetMonth(2026, 11), kes(10_000)), clock.now())
+        val debt = AddDebt(debts, clock)(DebtDirection.OwedToMe, "Wanjiru", kes(2_000), null)
+        RecordDebtPayment(debts, clock)(debt.id, kes(500))
+
+        // KES has cents and UGX doesn't: at 28.5 UGX a shilling, KES 650.50 is UGX 18,539.
+        settings.changeCurrency(UGX, 28.5, clock.now())
+
+        assertEquals(UGX, settings.observe().first().currency)
+        val entry = transactions.observeBetween(LocalDate(2026, 11, 25), LocalDate(2026, 11, 25)).first().single()
+        assertEquals(Money(18_539, UGX), entry.amount)
+        assertEquals(Money(285_000, UGX), budgets.observeMonth(BudgetMonth(2026, 11)).first().single().limit)
+        val savedDebt = debts.observeAll().first().single()
+        assertEquals(Money(57_000, UGX), savedDebt.principal)
+        assertEquals(Money(14_250, UGX), savedDebt.payments.single().amount)
+    }
+
+    @Test
+    fun aRateOfOneKeepsTheNumbers() = test {
+        LogEntry(transactions, clock)(EntryKind.Expense, kes(1_250), "food")
+        settings.changeCurrency(UGX, 1.0, clock.now())
+        val entry = transactions.observeBetween(LocalDate(2026, 11, 25), LocalDate(2026, 11, 25)).first().single()
+        assertEquals(Money.ofMajor(1_250, UGX), entry.amount)
+    }
 }

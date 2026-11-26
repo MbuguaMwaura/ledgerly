@@ -1,5 +1,6 @@
 package app.ledgerly.android.ui
 
+import app.ledgerly.android.ui.settings.ChangeCurrencyRoute
 import app.ledgerly.android.ui.settings.SettingsRoute
 import app.ledgerly.shared.presentation.app.AppUiState
 import androidx.activity.compose.BackHandler
@@ -70,12 +71,14 @@ private sealed interface Overlay {
     data object Budgets : Overlay
     data class Entry(val id: String) : Overlay
     data object Settings : Overlay
+    data object Currency : Overlay
 
     fun save(): String = when (this) {
         is AddDebt -> "add-debt:${direction.name}"
         Budgets -> "budgets"
         is Entry -> "entry:$id"
         Settings -> "settings"
+        Currency -> "currency"
     }
 
     companion object {
@@ -83,6 +86,7 @@ private sealed interface Overlay {
             saved == null -> null
             saved == "budgets" -> Budgets
             saved == "settings" -> Settings
+            saved == "currency" -> Currency
             saved.startsWith("add-debt:") -> AddDebt(DebtDirection.valueOf(saved.removePrefix("add-debt:")))
             saved.startsWith("entry:") -> Entry(saved.removePrefix("entry:"))
             else -> null
@@ -246,8 +250,10 @@ fun LedgerlyRoot(
                         Overlay.Settings -> SettingsRoute(
                             versionName = versionName,
                             onEditBudgets = { open(Overlay.Budgets) },
+                            onChangeCurrency = { open(Overlay.Currency) },
                             onClose = { close() },
                         )
+                        Overlay.Currency -> ChangeCurrencyRoute(onDone = { close(it) }, onClose = { open(Overlay.Settings) })
                     }
                 }
             }

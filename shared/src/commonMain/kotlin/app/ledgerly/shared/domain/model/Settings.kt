@@ -10,7 +10,7 @@ enum class ThemeChoice { System, Light, Dark }
 data class UserSettings(
     /** What Home greets the user by. Empty until they give one. */
     val name: String = "",
-    /** The currency every amount is logged in. Chosen once, during onboarding. */
+    /** The currency every amount is logged in. Chosen during onboarding; changing it later converts everything. */
     val currency: CurrencyCode = CurrencyCode.KES,
     val theme: ThemeChoice = ThemeChoice.System,
     /** Off hides budget cards and the Budgets view. Nothing is deleted. */

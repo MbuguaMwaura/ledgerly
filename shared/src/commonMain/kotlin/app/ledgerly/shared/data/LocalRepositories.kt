@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 import kotlinx.coroutines.flow.map
 import app.ledgerly.shared.money.CurrencyCode
+import app.ledgerly.shared.money.convertMinorUnits
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -172,6 +173,29 @@ class LocalSettingsRepository(
         db.transaction {
             val current = db.settingQueries.selectAll().executeAsList().associate { it.name to it.content }.toSettings()
             change(current).toMap().forEach { (key, value) -> db.settingQueries.upsert(key, value) }
+        }
+    }
+
+    override suspend fun changeCurrency(to: CurrencyCode, rate: Double, at: Instant) = withContext<Unit>(io) {
+        db.transaction {
+            val current = db.settingQueries.selectAll().executeAsList().associate { it.name to it.content }.toSettings()
+            val from = current.currency
+            if (from == to) return@transaction
+            fun convert(minor: Long) = convertMinorUnits(minor, from, to, rate)
+            val stamp = at.toDb()
+            db.entryQueries.entryAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.entryQueries.updateEntryAmount(convert(it.amount_minor), to.name, stamp, it.id)
+            }
+            db.budgetQueries.budgetAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.budgetQueries.updateBudgetAmount(convert(it.limit_minor), to.name, stamp, it.category_id, it.month)
+            }
+            db.debtQueries.debtAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.debtQueries.updateDebtAmount(convert(it.principal_minor), to.name, stamp, it.id)
+            }
+            db.debtQueries.paymentAmounts().executeAsList().filter { it.currency == from.name }.forEach {
+                db.debtQueries.updatePaymentAmount(convert(it.amount_minor), to.name, stamp, it.id)
+            }
+            current.copy(currency = to).toMap().forEach { (key, value) -> db.settingQueries.upsert(key, value) }
         }
     }
 

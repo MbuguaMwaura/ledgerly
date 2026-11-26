@@ -49,6 +49,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsRoute(
     versionName: String,
     onEditBudgets: () -> Unit,
+    onChangeCurrency: () -> Unit,
     onClose: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -77,6 +78,7 @@ fun SettingsRoute(
         onReminderChange = { on -> if (on) askForNotifications() else viewModel.onReminderChange(false) },
         onReminderTimeChange = viewModel::onReminderTimeChange,
         onEditBudgets = onEditBudgets,
+        onChangeCurrency = onChangeCurrency,
         onClose = onClose,
     )
 }
@@ -109,6 +111,7 @@ fun SettingsScreen(
     onReminderChange: (Boolean) -> Unit,
     onReminderTimeChange: (Int) -> Unit,
     onEditBudgets: () -> Unit,
+    onChangeCurrency: () -> Unit,
     onClose: () -> Unit,
 ) {
     val colors = LedgerlyTheme.colors
@@ -165,7 +168,7 @@ fun SettingsScreen(
                                 onClick = { pickingStart = true },
                             ),
                         )
-                        add(SettingItem("currency", "Currency", sub = "Chosen when you started", value = state.currencyText))
+                        add(SettingItem("currency", "Currency", sub = state.currencyText, onClick = onChangeCurrency))
                     },
                 )
                 DropdownMenu(

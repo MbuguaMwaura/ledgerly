@@ -40,3 +40,10 @@ loggedDays:
 SELECT logical_date FROM entry
 UNION
 SELECT logical_date FROM nothing_spent_day;
+
+-- For changing the currency: every amount, rewritten one by one.
+entryAmounts:
+SELECT id, amount_minor, currency FROM entry;
+
+updateEntryAmount:
+UPDATE entry SET amount_minor = :amountMinor, currency = :currency, updated_at = :updatedAt WHERE id = :id;

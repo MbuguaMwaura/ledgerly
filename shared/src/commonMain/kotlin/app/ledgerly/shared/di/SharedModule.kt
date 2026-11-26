@@ -29,6 +29,7 @@ import app.ledgerly.shared.presentation.home.HomeViewModel
 import app.ledgerly.shared.presentation.onboarding.OnboardingViewModel
 import app.ledgerly.shared.presentation.quicklog.QuickLogViewModel
 import app.ledgerly.shared.presentation.settings.SettingsViewModel
+import app.ledgerly.shared.presentation.settings.ChangeCurrencyViewModel
 import app.ledgerly.shared.presentation.spend.SpendViewModel
 import app.ledgerly.shared.presentation.transaction.TransactionDetailViewModel
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,7 @@ val sharedModule: Module = module {
     viewModelOf(::AppViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::ChangeCurrencyViewModel)
 }
 
 /** Supplies the platform's `SqlDriver` for [LedgerlyDatabase]. */

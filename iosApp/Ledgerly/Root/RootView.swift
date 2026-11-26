@@ -27,6 +27,7 @@ enum AppSheet: Identifiable {
     case budgets
     case entry(String)
     case settings
+    case currency
 
     var id: String {
         switch self {
@@ -34,6 +35,7 @@ enum AppSheet: Identifiable {
         case .budgets: "budgets"
         case .entry(let id): "entry-\(id)"
         case .settings: "settings"
+        case .currency: "currency"
         }
     }
 }
@@ -167,7 +169,9 @@ struct RootView: View {
             case .entry(let id):
                 TransactionDetailView(entryId: id, onDone: { close($0) }, onClose: { close() })
             case .settings:
-                SettingsView(onEditBudgets: { page = .budgets }, onClose: { close() })
+                SettingsView(onEditBudgets: { page = .budgets }, onChangeCurrency: { page = .currency }, onClose: { close() })
+            case .currency:
+                ChangeCurrencyView(onDone: { close($0) }, onClose: { page = .settings })
             }
         }
     }
