@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ledgerly.android.ui.components.label
 import app.ledgerly.android.ui.components.Amount
 import app.ledgerly.android.ui.components.BudgetRow
 import app.ledgerly.android.ui.components.ButtonStyle
@@ -147,7 +148,7 @@ fun TransactionDetailScreen(
         AlertDialog(
             onDismissRequest = { confirming = false },
             title = { Text("Delete this entry?") },
-            text = { Text("${state.title}, ${state.signedAmount.parts().format(withFraction = false)}. This can't be undone.") },
+            text = { Text("${state.title}, ${state.signedAmount.label()}. This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = false

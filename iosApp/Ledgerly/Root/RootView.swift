@@ -42,6 +42,7 @@ enum AppSheet: Identifiable {
 /// Expense / Income menu, the Quick log sheet and the confirmation toast.
 struct RootView: View {
     let app: AppUiState
+    let onToggleAmounts: () -> Void
 
     @State private var tab: AppTab = .home
     @State private var home = HomeModel()
@@ -66,6 +67,8 @@ struct RootView: View {
                         onOpenEntry: { page = .entry($0) },
                         onEditBudgets: { page = .budgets },
                         onOpenSettings: { page = .settings },
+                        amountsHidden: app.hideAmounts,
+                        onToggleAmounts: onToggleAmounts,
                         firstName: app.firstName,
                         trackBudgets: app.trackBudgets,
                         trackDebts: app.trackDebts

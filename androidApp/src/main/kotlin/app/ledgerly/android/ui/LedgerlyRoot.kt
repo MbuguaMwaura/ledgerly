@@ -104,6 +104,7 @@ private val TABS = listOf(
 fun LedgerlyRoot(
     app: AppUiState,
     versionName: String,
+    onToggleAmounts: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
     quickLogViewModel: QuickLogViewModel = koinViewModel(),
     debtsViewModel: DebtsViewModel = koinViewModel(),
@@ -158,6 +159,8 @@ fun LedgerlyRoot(
                 onOpenEntry = { open(Overlay.Entry(it)) },
                 onEditBudgets = { open(Overlay.Budgets) },
                 onOpenSettings = { open(Overlay.Settings) },
+                amountsHidden = app.hideAmounts,
+                onToggleAmounts = onToggleAmounts,
                 firstName = app.firstName,
                 trackBudgets = app.trackBudgets,
                 trackDebts = app.trackDebts,

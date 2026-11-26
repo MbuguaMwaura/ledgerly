@@ -46,9 +46,9 @@ import app.ledgerly.android.ui.theme.tokens.LedgerlyTextStyles
 import app.ledgerly.shared.money.Money
 import app.ledgerly.shared.money.Sign
 
-/** "KES 1,250", or with a sign for entries: "− KES 650", "+ KES 4,000". */
+/** "KES 1,250", or with a sign for entries: "− KES 650", "+ KES 4,000". "KES ••••" while amounts are hidden. */
 fun Money.label(withSign: Boolean = false, withFraction: Boolean = false): String {
-    val parts = parts()
+    val parts = shownParts()
     val text = parts.format(withFraction)
     return when {
         withSign && parts.sign == Sign.Negative -> "− $text"

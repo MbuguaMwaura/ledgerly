@@ -58,6 +58,7 @@ fun SettingsRoute(
     SettingsScreen(
         state = state,
         canUseAppLock = rememberCanUseAppLock(),
+        onHideAmountsChange = viewModel::onHideAmountsChange,
         onAppLockChange = { on ->
             if (on) authenticate("Turn on app lock") { ok -> if (ok) viewModel.onAppLockChange(true) }
             else viewModel.onAppLockChange(false)
@@ -92,6 +93,7 @@ fun SettingsScreen(
     state: SettingsUiState,
     canUseAppLock: Boolean,
     onAppLockChange: (Boolean) -> Unit,
+    onHideAmountsChange: (Boolean) -> Unit,
     versionName: String,
     onNameChange: (String) -> Unit,
     onThemeChange: (ThemeChoice) -> Unit,
@@ -199,6 +201,13 @@ fun SettingsScreen(
                         checked = state.appLock,
                         enabled = canUseAppLock || state.appLock,
                         onCheckedChange = onAppLockChange,
+                    ),
+                    SettingItem(
+                        "hide-amounts",
+                        "Hide amounts",
+                        sub = "Show •••• instead of figures. The eye on Home does the same.",
+                        checked = state.hideAmounts,
+                        onCheckedChange = onHideAmountsChange,
                     ),
                 ),
             )

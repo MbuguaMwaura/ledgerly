@@ -59,7 +59,7 @@ struct BudgetRowView: View {
                 HStack {
                     Text(row.categoryName).ledgerlyText(LedgerlyText.body).foregroundStyle(LedgerlyColor.ink)
                     Spacer()
-                    Text("\(row.spent.label()) / \(row.limit.parts().whole)").ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.ink).monospacedDigit()
+                    Text("\(row.spent.label()) / \(row.limit.shownParts().whole)").ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.ink).monospacedDigit()
                 }
                 Track(fraction: Double(row.percentUsed) / 100, fill: tone)
                 Text(note).ledgerlyText(LedgerlyText.caption).foregroundStyle(onTrack ? LedgerlyColor.inkMuted : tone)

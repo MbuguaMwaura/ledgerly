@@ -29,7 +29,7 @@ struct AppShell: View {
             } else if !state.isOnboarded {
                 OnboardingView()
             } else {
-                RootView(app: state)
+                RootView(app: state, onToggleAmounts: { app.viewModel.onHideAmountsChange(hidden: !state.hideAmounts) })
                     .accessibilityHidden(state.isLocked)
             }
         }
@@ -43,6 +43,9 @@ struct AppShell: View {
         .task { await app.observe() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { app.viewModel.onAppHidden() }
+        }
+        .onChange(of: state.hideAmounts, initial: true) { _, hidden in
+            AmountPrivacy.shared.hidden = hidden
         }
         .onChange(of: state.isLocked) { _, locked in
             if !locked { prompted = false }
