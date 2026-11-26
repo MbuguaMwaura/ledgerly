@@ -13,7 +13,10 @@ import app.ledgerly.shared.domain.usecase.LogEntry
 import app.ledgerly.shared.domain.usecase.LogNothingSpent
 import app.ledgerly.shared.domain.usecase.ObserveHomeSummary
 import app.ledgerly.shared.domain.usecase.RecordDebtPayment
+import app.ledgerly.shared.domain.model.ThemeChoice
+import app.ledgerly.shared.domain.model.UserSettings
 import app.ledgerly.shared.money.CurrencyCode.KES
+import app.ledgerly.shared.money.CurrencyCode.UGX
 import app.ledgerly.shared.money.Money
 import app.ledgerly.shared.testing.FakeClock
 import app.ledgerly.shared.testing.createTestDriver
@@ -37,6 +40,7 @@ class RepositoriesTest {
     private val logs = LocalLogRepository(db, dispatcher)
     private val budgets = LocalBudgetRepository(db, dispatcher)
     private val debts = LocalDebtRepository(db, dispatcher)
+    private val settings = LocalSettingsRepository(db, dispatcher)
 
     private fun kes(major: Long) = Money.ofMajor(major, KES)
 
@@ -100,7 +104,7 @@ class RepositoriesTest {
         AddDebt(debts, clock)(DebtDirection.OwedToMe, "Otieno", kes(2_000), LocalDate(2026, 11, 27))
         AddDebt(debts, clock)(DebtDirection.OwedToMe, "Akinyi", kes(3_000), LocalDate(2026, 12, 20))
 
-        ObserveHomeSummary(transactions, budgets, logs, debts, clock)().test {
+        ObserveHomeSummary(transactions, budgets, logs, debts, settings, clock)().test {
             val summary = awaitItem()
             assertEquals(kes(15_000), summary.leftToSpend.totalLimit)
             assertEquals(kes(9_500), summary.leftToSpend.spent)
@@ -135,5 +139,21 @@ class RepositoriesTest {
             budgets.observeMonth(october).first().toSet(),
         )
         assertTrue(budgets.observeMonth(BudgetMonth(2026, 9)).first().isEmpty())
+    }
+
+    @Test
+    fun settingsStartAtDefaultsAndSaveChanges() = test {
+        val fresh = settings.observe().first()
+        assertEquals(UserSettings(), fresh)
+        assertTrue(!fresh.isOnboarded)
+
+        settings.update { it.copy(name = "Wanjiru Kamau", currency = UGX, theme = ThemeChoice.Dark, trackDebts = false, startedOn = LocalDate(2026, 11, 25)) }
+        val saved = settings.observe().first()
+        assertEquals("Wanjiru Kamau", saved.name)
+        assertEquals(UGX, saved.currency)
+        assertEquals(ThemeChoice.Dark, saved.theme)
+        assertEquals(false, saved.trackDebts)
+        assertTrue(saved.trackBudgets)
+        assertTrue(saved.isOnboarded)
     }
 }

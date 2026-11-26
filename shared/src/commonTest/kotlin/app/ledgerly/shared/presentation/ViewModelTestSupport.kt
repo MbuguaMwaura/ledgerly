@@ -5,6 +5,7 @@ import app.ledgerly.shared.data.LocalBudgetRepository
 import app.ledgerly.shared.data.LocalCategoryRepository
 import app.ledgerly.shared.data.LocalDebtRepository
 import app.ledgerly.shared.data.LocalLogRepository
+import app.ledgerly.shared.data.LocalSettingsRepository
 import app.ledgerly.shared.data.LocalTransactionRepository
 import app.ledgerly.shared.db.LedgerlyDatabase
 import app.ledgerly.shared.money.CurrencyCode
@@ -37,6 +38,7 @@ abstract class ViewModelTest {
     protected val logs = LocalLogRepository(db, dispatcher)
     protected val budgets = LocalBudgetRepository(db, dispatcher)
     protected val debts = LocalDebtRepository(db, dispatcher)
+    protected val settings = LocalSettingsRepository(db, dispatcher)
 
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(dispatcher)

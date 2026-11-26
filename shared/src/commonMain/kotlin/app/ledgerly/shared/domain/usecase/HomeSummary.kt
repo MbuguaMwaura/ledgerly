@@ -1,5 +1,10 @@
 package app.ledgerly.shared.domain.usecase
 
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import app.ledgerly.shared.domain.model.BudgetMonth
 import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtDirection
@@ -50,10 +55,14 @@ class ObserveHomeSummary(
     private val budgets: BudgetRepository,
     private val logs: LogRepository,
     private val debts: DebtRepository,
+    private val settings: SettingsRepository,
     private val clock: AppClock,
-    private val currency: CurrencyCode = CurrencyCode.KES,
 ) {
-    operator fun invoke(): Flow<HomeSummary> {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    operator fun invoke(): Flow<HomeSummary> = settings.observe().map { it.currency }.distinctUntilChanged()
+        .flatMapLatest { currency -> summary(currency) }
+
+    private fun summary(currency: CurrencyCode): Flow<HomeSummary> {
         val today = clock.today()
         val month = BudgetMonth.of(today)
         return combine(

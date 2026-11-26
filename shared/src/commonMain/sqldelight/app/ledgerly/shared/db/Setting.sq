@@ -1,0 +1,11 @@
+-- The user's preferences, one row per key. Values are text; the repository parses them.
+CREATE TABLE setting (
+    name TEXT NOT NULL PRIMARY KEY,
+    content TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM setting;
+
+upsert:
+INSERT OR REPLACE INTO setting (name, content) VALUES (?, ?);

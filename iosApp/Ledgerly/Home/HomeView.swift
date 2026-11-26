@@ -8,10 +8,14 @@ struct HomeView: View {
     let onOpenDebts: () -> Void
     let onOpenEntry: (String) -> Void
     let onEditBudgets: () -> Void
+    let onOpenSettings: () -> Void
+    let firstName: String
+    let trackBudgets: Bool
+    let trackDebts: Bool
 
     var body: some View {
         let state = model.state
-        let hasBudgets = !state.totalBudget.isZero
+        let hasBudgets = trackBudgets && !state.totalBudget.isZero
 
         ScrollView {
             VStack(alignment: .leading, spacing: LedgerlySpacing.space3) {
@@ -27,7 +31,7 @@ struct HomeView: View {
                         .padding(.top, 6)
                     subline(state, hasBudgets: hasBudgets)
                         .padding(.top, 6)
-                    if !hasBudgets && !state.isLoading {
+                    if trackBudgets && !hasBudgets && !state.isLoading {
                         Button("Set budgets", action: onEditBudgets)
                             .buttonStyle(PillButtonStyle(kind: .soft, small: true))
                             .padding(.top, 12)
@@ -85,7 +89,7 @@ struct HomeView: View {
                     }
                 }
 
-                if !state.debtsDueSoon.isEmpty {
+                if trackDebts && !state.debtsDueSoon.isEmpty {
                     SectionHeader(title: "Owed to you, due soon", action: "All debts", onAction: onOpenDebts)
                         .padding(.top, -LedgerlySpacing.space3)
                     ForEach(state.debtsDueSoon) { row in
@@ -100,14 +104,29 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(Date.now.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year()))
-                .ledgerlyText(LedgerlyText.label)
-                .foregroundStyle(LedgerlyColor.inkMuted)
-            Text(greeting)
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(LedgerlyColor.ink)
-                .accessibilityAddTraits(.isHeader)
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Date.now.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year()))
+                    .ledgerlyText(LedgerlyText.label)
+                    .foregroundStyle(LedgerlyColor.inkMuted)
+                Text(firstName.isEmpty ? greeting : "\(greeting), \(firstName)")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(LedgerlyColor.ink)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            Spacer(minLength: 8)
+            Button(action: onOpenSettings) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(LedgerlyColor.ink)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassControl(in: Circle())
+            .accessibilityLabel("Settings")
         }
         .padding(.top, 12)
         .padding(.bottom, 8)
@@ -123,7 +142,10 @@ struct HomeView: View {
 
     @ViewBuilder
     private func subline(_ state: HomeUiState, hasBudgets: Bool) -> some View {
-        if !hasBudgets {
+        if !hasBudgets && !trackBudgets {
+            Text("Across everything you logged this month.")
+                .ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
+        } else if !hasBudgets {
             Text("Set budgets to see what's left each day.")
                 .ledgerlyText(LedgerlyText.label).foregroundStyle(LedgerlyColor.inkMuted)
         } else if state.leftToSpend.minorUnits < 0 {

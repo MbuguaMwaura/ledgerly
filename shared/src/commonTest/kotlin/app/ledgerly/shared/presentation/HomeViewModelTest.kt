@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 
 class HomeViewModelTest : ViewModelTest() {
     private fun viewModel() = HomeViewModel(
-        ObserveHomeSummary(transactions, budgets, logs, debts, clock),
+        ObserveHomeSummary(transactions, budgets, logs, debts, settings, clock),
         categories,
         LogNothingSpent(logs, clock),
         clock,

@@ -1,5 +1,7 @@
 package app.ledgerly.shared.presentation.quicklog
 
+import app.ledgerly.shared.presentation.common.currency
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.Category
@@ -52,9 +54,9 @@ class QuickLogViewModel(
     categories: CategoryRepository,
     private val logs: LogRepository,
     private val logEntry: LogEntry,
+    settings: SettingsRepository,
     private val clock: AppClock,
 ) : ViewModel() {
-    private val currency = CurrencyCode.KES
 
     private data class Input(
         val kind: EntryKind = EntryKind.Expense,
@@ -67,16 +69,17 @@ class QuickLogViewModel(
 
     private val input = MutableStateFlow(Input())
 
-    val uiState: StateFlow<QuickLogUiState> = combine(input, categories.observeAll()) { current, all ->
-        state(current, all.filter { it.kind == current.kind })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), state(Input(), emptyList()))
+    val uiState: StateFlow<QuickLogUiState> = combine(input, categories.observeAll(), settings.currency()) { current, all, currency ->
+        state(current, all.filter { it.kind == current.kind }, currency)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), state(Input(), emptyList(), CurrencyCode.KES))
 
     fun onKindChange(kind: EntryKind) {
         input.update { if (it.kind == kind) it else it.copy(kind = kind, categoryId = null) }
     }
 
     fun onKey(key: KeypadKey) {
-        input.update { it.copy(digits = applyKey(it.digits, key, currency.decimals)) }
+        val decimals = uiState.value.amount.currency.decimals
+        input.update { it.copy(digits = applyKey(it.digits, key, decimals)) }
     }
 
     fun onSelectCategory(id: String) {
@@ -113,7 +116,7 @@ class QuickLogViewModel(
         input.update { Input(kind = it.kind) }
     }
 
-    private fun state(current: Input, categories: List<Category>): QuickLogUiState {
+    private fun state(current: Input, categories: List<Category>, currency: CurrencyCode): QuickLogUiState {
         val amount = parseMinorUnits(current.digits, currency)
         val selected = current.categoryId?.takeIf { id -> categories.any { it.id == id } }
         return QuickLogUiState(

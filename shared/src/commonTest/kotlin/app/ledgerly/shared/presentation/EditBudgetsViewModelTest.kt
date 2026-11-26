@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 class EditBudgetsViewModelTest : ViewModelTest() {
     private val november = BudgetMonth(2026, 11)
 
-    private fun viewModel() = EditBudgetsViewModel(categories, budgets, transactions, clock)
+    private fun viewModel() = EditBudgetsViewModel(categories, budgets, transactions, settings, clock)
 
     @Test
     fun listsEveryExpenseCategoryWithWhatWasSpent() = test {

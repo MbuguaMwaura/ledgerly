@@ -1,5 +1,7 @@
 package app.ledgerly.shared.presentation.adddebt
 
+import app.ledgerly.shared.presentation.common.currency
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.Debt
@@ -37,6 +39,7 @@ data class DueChoiceState(
 )
 
 data class AddDebtUiState(
+    val currency: CurrencyCode,
     val direction: DebtDirection,
     val amountText: String,
     /** "Who owes you" or "Who you owe". */
@@ -61,9 +64,11 @@ data class AddDebtUiState(
 class AddDebtViewModel(
     debts: DebtRepository,
     private val addDebt: AddDebt,
+    settings: SettingsRepository,
     private val clock: AppClock,
 ) : ViewModel() {
-    private val currency = CurrencyCode.KES
+    /** The user's currency, kept current by [uiState]. */
+    private var currency = CurrencyCode.KES
 
     private data class Input(
         val direction: DebtDirection = DebtDirection.OwedToMe,
@@ -77,7 +82,8 @@ class AddDebtViewModel(
 
     private val input = MutableStateFlow(Input())
 
-    val uiState: StateFlow<AddDebtUiState> = combine(input, debts.observeAll()) { current, all ->
+    val uiState: StateFlow<AddDebtUiState> = combine(input, debts.observeAll(), settings.currency()) { current, all, code ->
+        currency = code
         state(current, all)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), state(Input(), emptyList()))
 
@@ -127,6 +133,7 @@ class AddDebtViewModel(
             payments = emptyList(),
         ).toRow(today, clock.timeZone())
         return AddDebtUiState(
+            currency = currency,
             direction = current.direction,
             amountText = current.amountText,
             whoLabel = if (current.direction == DebtDirection.OwedToMe) "Who owes you" else "Who you owe",

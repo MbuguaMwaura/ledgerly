@@ -1,5 +1,7 @@
 package app.ledgerly.shared.presentation.debts
 
+import app.ledgerly.shared.presentation.common.currency
+import app.ledgerly.shared.domain.repository.SettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ledgerly.shared.domain.model.Debt
@@ -40,15 +42,15 @@ class DebtsViewModel(
     private val debts: DebtRepository,
     private val recordDebtPayment: RecordDebtPayment,
     private val markReminded: MarkReminded,
+    settings: SettingsRepository,
     private val clock: AppClock,
 ) : ViewModel() {
-    private val currency = CurrencyCode.KES
     private val direction = MutableStateFlow(DebtDirection.OwedToMe)
 
     /** The debts behind the current [uiState], so drafts use the real record. */
     private var latest: List<Debt> = emptyList()
 
-    val uiState: StateFlow<DebtsUiState> = combine(debts.observeAll(), direction) { all, selected ->
+    val uiState: StateFlow<DebtsUiState> = combine(debts.observeAll(), direction, settings.currency()) { all, selected, currency ->
         latest = all
         val today = clock.today()
         val zero = Money.zero(currency)
@@ -69,7 +71,7 @@ class DebtsViewModel(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        DebtsUiState(true, DebtDirection.OwedToMe, Money.zero(currency), Money.zero(currency), emptyList(), emptyList(), emptyList(), emptyList()),
+        DebtsUiState(true, DebtDirection.OwedToMe, Money.zero(CurrencyCode.KES), Money.zero(CurrencyCode.KES), emptyList(), emptyList(), emptyList(), emptyList()),
     )
 
     fun onSelectDirection(value: DebtDirection) {

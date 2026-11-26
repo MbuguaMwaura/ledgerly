@@ -6,6 +6,7 @@ import app.ledgerly.shared.domain.model.Category
 import app.ledgerly.shared.domain.model.Debt
 import app.ledgerly.shared.domain.model.DebtPayment
 import app.ledgerly.shared.domain.model.Transaction
+import app.ledgerly.shared.domain.model.UserSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -64,4 +65,11 @@ interface DebtRepository {
     suspend fun markReminded(debtId: String, at: Instant)
 
     suspend fun delete(debtId: String)
+}
+
+interface SettingsRepository {
+    fun observe(): Flow<UserSettings>
+
+    /** Applies [change] to the current settings and saves the result. */
+    suspend fun update(change: (UserSettings) -> UserSettings)
 }

@@ -11,7 +11,12 @@ import app.ledgerly.shared.domain.rules.DueStatus
 import app.ledgerly.shared.domain.rules.canSuggestReminder
 import app.ledgerly.shared.domain.rules.daysSinceReminder
 import app.ledgerly.shared.domain.rules.dueStatus
+import app.ledgerly.shared.domain.repository.SettingsRepository
+import app.ledgerly.shared.money.CurrencyCode
 import app.ledgerly.shared.money.Money
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -118,3 +123,6 @@ internal fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     LocalDate.fromEpochDays(today.toEpochDays() - 1) -> "Yesterday"
     else -> "${WEEKDAYS[date.dayOfWeek.ordinal]}, ${date.dayOfMonth} ${MONTHS[date.monthNumber - 1]}"
 }
+
+/** The currency the user logs in, as it changes. */
+internal fun SettingsRepository.currency(): Flow<CurrencyCode> = observe().map { it.currency }.distinctUntilChanged()

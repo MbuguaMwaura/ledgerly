@@ -14,7 +14,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SpendViewModelTest : ViewModelTest() {
-    private fun viewModel() = SpendViewModel(transactions, budgets, categories, clock)
+    private fun viewModel() = SpendViewModel(transactions, budgets, categories, settings, clock)
 
     private val today = LocalDate(2026, 11, 25)
     private val yesterday = LocalDate(2026, 11, 24)
