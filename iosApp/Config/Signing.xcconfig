@@ -1,0 +1,10 @@
+// Signing settings for the Ledgerly target. XcodeGen points the target at this file, so the
+// team survives regenerating the project.
+//
+// Your team ID goes in Local.xcconfig next to this file. It is gitignored, so it stays on your
+// Mac: copy Local.xcconfig.example to Local.xcconfig and fill it in. Without it (on CI, for
+// example) the build carries on unsigned for the simulator.
+
+CODE_SIGN_STYLE = Automatic
+
+#include? "Local.xcconfig"

@@ -17,6 +17,10 @@ targets:
     platform: iOS
     sources:
       - path: Ledgerly
+    # The signing team comes from Config/Local.xcconfig (gitignored), so it survives regenerating.
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.ledgerly
